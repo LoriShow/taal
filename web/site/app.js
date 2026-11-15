@@ -540,6 +540,7 @@
       $("album-eyebrow").textContent = a.eyebrow; $("album-title").textContent = a.title; $("album-blurb").textContent = a.blurb;
       $("tracks").setAttribute("aria-label", a.eyebrow);
       if (a.cover) {
+        $("cover").hidden = true;
         var url = CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + a.cover, img = new Image();
         img.onload = function () { if (ALBUM_ID === id) { $("cover").src = url; $("cover").alt = a.alt || ""; $("cover").hidden = false; } };
         img.onerror = function () { if (ALBUM_ID === id) $("cover").hidden = true; };
