@@ -351,3 +351,7 @@ textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px 
   #albumtabs::-webkit-scrollbar { display: none; }
   #albumtabs button { white-space: nowrap; flex: none; }
 }
+@media (max-width: 720px) {
+  /* Keep "Your family" pinned at the right edge while the other menu items scroll under it. */
+  .top nav a.cta { position: sticky; right: 0; flex: none; box-shadow: -14px 0 10px 4px var(--bg); }
+}
