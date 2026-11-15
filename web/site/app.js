@@ -160,6 +160,8 @@
     } else if (usePiano) {
       var byMidi = {}, NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
       pitches.forEach(function (p) { byMidi[midi(p)] = p; });
+      // Five-note songs without F: the hand skips F, so G is finger 4 and A finger 5.
+      var fing = byMidi[69] && !byMidi[65] ? { 60: 1, 62: 2, 64: 3, 67: 4, 69: 5 } : FINGER;
       var whites = [];
       for (var m = PIANO_LOW; m <= PIANO_HIGH; m++) if (NAMES[m % 12].length === 1) whites.push(m);
       for (var m2 = PIANO_LOW; m2 <= PIANO_HIGH; m2++) {
@@ -172,7 +174,7 @@
             k.style.left = ((wi + 1) * 100 / whites.length) + "%";
           } else {
             if (sp) k.setAttribute("data-n", letter(sp));
-            if (sp && FINGER[m]) k.appendChild(el("span", { "class": "finger" }, String(FINGER[m])));
+            if (sp && fing[m]) k.appendChild(el("span", { "class": "finger" }, String(fing[m])));
             k.appendChild(el("span", { "class": "pname" }, m === 60 ? "C" : name));
             if (m === 60) k.appendChild(el("small", {}, "middle C"));
           }
