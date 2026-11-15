@@ -1,0 +1,47 @@
+# Taal
+
+A kids' music platform, sister to Lori. A family's music taste becomes original songs
+with animated films that teach the child and parents to play together.
+
+## Layout
+
+- `worker/` — Python job runner (Railway service `taal-worker`, root directory `/worker`).
+- `supabase/migrations/` — database schema (Supabase project `taal`).
+- `web/` — the site (not built yet; Railway service `taal-web`).
+
+## Rules that shape the code
+
+1. **Links are taste signals, not source material.** No YouTube audio is downloaded,
+   analysed or remade. Only titles are read, and only abstract traits reach the
+   music generator: never an artist, band or song name.
+2. **The child's tune is exact.** It is written as notes (`tune`), checked by
+   `taal_worker/tune.py`, and rendered with a sampled instrument. ElevenLabs Music
+   only makes the backing track.
+3. **Audio first.** Sections are whole bars, so the timeline in `taal_worker/plan.py`
+   drives the film cuts and the play-along.
+4. **Every song waits for the child.** A plan without a `turn` section fails its check.
+
+## Worker
+
+Job types so far:
+
+| Type | Does |
+|---|---|
+| `check_song` | Runs the tune and plan rules on a draft song; marks it `checked` |
+| `backing_track` | Generates the backing track with ElevenLabs Music and stores it |
+
+Queue a job by inserting a row in `taal_jobs` (`type`, `song_id`).
+
+Variables on `taal-worker`: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ELEVENLABS_API_KEY`,
+`ANTHROPIC_API_KEY`, `HIGGSFIELD_API_KEY`, `WOLFRAM_APP_ID`. No keys go in this repo.
+
+Tests:
+
+```
+cd worker && pip install -r requirements.txt pytest && python -m pytest
+```
+
+## Provisional numbers
+
+The tempo band (60-120 bpm) and the playability pass mark (60) in `tune.py` are our
+own starting values. They are to be calibrated with real children.
