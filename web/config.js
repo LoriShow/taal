@@ -3,6 +3,14 @@ window.TAAL = {
   supabaseUrl: "https://rnwvdwdanyldnrstwxcc.supabase.co",
   supabaseKey: "sb_publishable_tH8Yo0dtrDowqOxfigxX_Q_REZgTtw0",
   albumCover: "covers/album1-v1",
+  // The stage: an animated backdrop, and characters the page moves on the beat.
+  theme: {
+    name: "Paper pond",
+    video: "themes/pond/loop-v1",
+    backdrop: "themes/pond/backdrop-v1",
+    drum: "themes/pond/drum-v1",
+    friends: ["themes/pond/duck-v1", "themes/pond/turtle-v1", "themes/pond/firefly-v1"]
+  },
   // Shown if the database cannot be reached.
   fallbackSong: {
     id: "d3b59e85-17c7-45b9-8c27-bb9284d39454",

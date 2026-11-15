@@ -152,11 +152,11 @@ def load_album(db, job: dict) -> dict:
 
 
 ASSET_HOSTS = (".higgsfield.ai", ".cloudfront.net")
-ASSET_TYPES = {"image/png", "image/jpeg", "image/webp"}
+ASSET_TYPES = {"image/png", "image/jpeg", "image/webp", "video/mp4"}
 
 
 def import_asset(db, job: dict) -> dict:
-    """Copy an image made for Taal (a cover, a theme picture) into the public bucket."""
+    """Copy a picture or short clip made for Taal (a cover, theme art) into the public bucket."""
     payload = job.get("payload") or {}
     url, path = payload.get("url", ""), payload.get("path", "")
     host = urlparse(url).hostname or ""
@@ -170,8 +170,8 @@ def import_asset(db, job: dict) -> dict:
     content_type = r.headers.get("content-type", "").split(";")[0].strip()
     if content_type not in ASSET_TYPES:
         raise RuntimeError(f"unsupported asset type {content_type!r}")
-    if len(r.content) > 15 * 1024 * 1024:
-        raise RuntimeError("the asset is larger than 15 MB")
+    if len(r.content) > 40 * 1024 * 1024:
+        raise RuntimeError("the asset is larger than 40 MB")
     db.upload(path, r.content, content_type, bucket="taal-public")
     return {"path": path, "bytes": len(r.content), "content_type": content_type}
 

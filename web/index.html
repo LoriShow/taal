@@ -73,8 +73,11 @@
           <div id="clock">0:00 / 0:40</div>
         </div>
         <div class="stage" id="stage" aria-hidden="true">
-          <svg viewBox="0 0 40 40" class="hopper" id="hopper"><use href="#dhin"/></svg>
+          <video id="stagevid" class="stagevid" muted loop playsinline preload="auto" hidden></video>
           <div class="dots" id="dots"></div>
+          <div class="cast" id="cast">
+            <svg viewBox="0 0 40 40" class="hopper" id="hopper"><use href="#dhin"/></svg>
+          </div>
         </div>
         <div class="timeline" id="timeline"><div id="head"></div></div>
         <p id="lyrics" class="lyrics" aria-live="off"></p>

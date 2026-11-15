@@ -186,7 +186,15 @@
       keyEls[p].classList.toggle("due", !!due[p]);
       if (P.dotEls && P.dotEls[p]) P.dotEls[p].classList.toggle("on", !!due[p]);
     });
-    $("hopper").classList.toggle("hop", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.3);
+    var onBeat = !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.3;
+    $("hopper").classList.toggle("hop", onBeat);
+    if (STAGE.drum) STAGE.drum.classList.toggle("hop", onBeat);
+    STAGE.friends.forEach(function (f, i) {
+      var playing = false;
+      (P.pitches || []).forEach(function (p, pi) { if (due[p] && pi % STAGE.friends.length === i) playing = true; });
+      f.classList.toggle("play", playing);
+      f.classList.toggle("hop", onBeat && !playing);
+    });
     $("stage").classList.toggle("turn", !!cur && cur.kind === "turn");
   }
   function frame() {
@@ -224,12 +232,37 @@
     start();
   });
 
+  /* The themed stage. Every piece is optional: whatever fails to load is simply left out. */
+  var STAGE = { drum: null, friends: [] };
+  function pub(path) { return CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + path; }
+  if (CFG.theme) {
+    var cast = $("cast"), spots = [["24%", "27%", "17%"], ["76%", "27%", "17%"], ["62%", "58%", "11%"]];
+    var addChar = function (path, cls, x, b, w, done) {
+      var im = new Image();
+      im.className = "char " + cls; im.alt = "";
+      im.style.setProperty("--x", x); im.style.setProperty("--b", b); im.style.setProperty("--w", w);
+      im.onload = function () { cast.appendChild(im); done(im); };
+      im.src = pub(path);
+    };
+    addChar(CFG.theme.drum, "drum", "50%", "27%", "19%", function (im) { STAGE.drum = im; $("hopper").style.display = "none"; });
+    (CFG.theme.friends || []).forEach(function (path, i) {
+      var sp = spots[i % spots.length];
+      addChar(path, "friend", sp[0], sp[1], sp[2], function (im) { STAGE.friends.push(im); });
+    });
+    var bd = new Image();
+    bd.onload = function () { $("stage").style.backgroundImage = "url(" + bd.src + ")"; $("stage").classList.remove("has-cover"); STAGE.backdrop = true; };
+    bd.src = pub(CFG.theme.backdrop);
+    var vid = $("stagevid");
+    vid.addEventListener("canplay", function () { vid.hidden = false; vid.play().catch(function () {}); });
+    vid.src = pub(CFG.theme.video);
+  }
+
   if (CFG.albumCover) {
     var coverUrl = CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + CFG.albumCover;
     var probe = new Image();
     probe.onload = function () {
       $("cover").src = coverUrl; $("cover").hidden = false;
-      $("stage").style.backgroundImage = "url(" + coverUrl + ")"; $("stage").classList.add("has-cover");
+      if (!STAGE.backdrop) { $("stage").style.backgroundImage = "url(" + coverUrl + ")"; $("stage").classList.add("has-cover"); }
     };
     probe.src = coverUrl;
   }
