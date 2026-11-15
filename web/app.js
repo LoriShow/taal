@@ -27,6 +27,7 @@
   function letter(p) { return p[0].toUpperCase(); }
 
   var P = { ctx: null, gain: null, startCtx: 0, playing: false, raf: 0, audio: null };
+  var ALBUM = [], albumMode = false;
   var song = null, SECTIONS = [], NOTES = [], TOTAL = 0, BEAT = 0, PER_BAR = 4, tuneBeats = 16, keyEls = {}, cells = [];
 
   function setupSong(s) {
@@ -158,6 +159,11 @@
         (got >= turn.length * 0.75 ? "Lovely playing!" : "Play again and tap as each key lights up.");
     }
     draw(0, true);
+    if (finished && albumMode) {
+      var i = ALBUM.map(function (x) { return x.id; }).indexOf(song.id);
+      if (i >= 0 && i + 1 < ALBUM.length) { setupSong(ALBUM[i + 1]); start(); return; }
+    }
+    if (albumMode) { albumMode = false; $("playall").textContent = "Play the whole album"; }
   }
   function fmt(t) { var s = Math.max(0, Math.floor(t)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function draw(t, idle) {
@@ -200,7 +206,16 @@
     var i = parseInt(e.key, 10);
     if (i >= 1 && P.pitches && P.pitches[i - 1]) tap(P.pitches[i - 1]);
   });
-  $("playbtn").addEventListener("click", function () { if (P.playing) stop(false); else start(); });
+  $("playbtn").addEventListener("click", function () {
+    if (P.playing) { albumMode = false; stop(false); } else start();
+  });
+  $("playall").addEventListener("click", function () {
+    if (albumMode) { albumMode = false; stop(false); return; }
+    if (P.playing) stop(false);
+    if (ALBUM.length) setupSong(ALBUM[0]);
+    albumMode = true; $("playall").textContent = "Stop the album";
+    start();
+  });
 
   setupSong(CFG.fallbackSong);
   if (sb) {
@@ -208,6 +223,7 @@
       .order("track").order("created_at").then(function (r) {
         var list = (r.data || []).filter(function (x) { return x.tune && x.plan; });
         if (!list.length) return;
+        ALBUM = list;
         var ol = $("tracks"); ol.textContent = "";
         list.forEach(function (x, i) {
           var li = el("li"), b = el("button", { type: "button", "data-id": x.id });
@@ -216,6 +232,7 @@
           t.appendChild(el("small", {}, "Level " + (x.level || 1) + " · " + x.tune.bpm + " beats a minute"));
           b.appendChild(t);
           b.addEventListener("click", function () {
+            albumMode = false; $("playall").textContent = "Play the whole album";
             if (P.playing) stop(false);
             if (P.audio) { P.audio.pause(); }
             setupSong(x);
