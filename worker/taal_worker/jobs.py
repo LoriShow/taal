@@ -69,6 +69,17 @@ def backing_track(db, job: dict) -> dict:
     return {"audio_path": path, "elevenlabs_song_id": eleven_id, "bytes": len(audio)}
 
 
+def publish_sample(db, job: dict) -> dict:
+    """Make a finished song playable by anyone on the site, as a sample."""
+    song = _song(db, job)
+    if not song.get("audio_path"):
+        raise RuntimeError("the song has no audio yet")
+    audio, content_type = db.download(song["audio_path"])
+    path = db.upload(f"samples/{song['id']}/backing.mp3", audio, "audio/mpeg", bucket="taal-public")
+    db.update("taal_songs", song["id"], {"is_sample": True, "sample_audio_path": path})
+    return {"sample_audio_path": path, "bytes": len(audio)}
+
+
 PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
@@ -111,6 +122,7 @@ def ping(db, job: dict) -> dict:
 
 HANDLERS = {
     "ping": ping,
+    "publish_sample": publish_sample,
     "read_instrument": read_instrument,
     "check_song": check_song,
     "backing_track": backing_track,

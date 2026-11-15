@@ -42,11 +42,11 @@ class Db:
     def insert(self, table: str, values: dict) -> None:
         self._check(self.http.post(f"{self.url}/rest/v1/{table}", json=values))
 
-    def upload(self, path: str, data: bytes, content_type: str) -> str:
-        """Put a file in the private 'taal' bucket. Returns the stored path."""
+    def upload(self, path: str, data: bytes, content_type: str, bucket: str = "taal") -> str:
+        """Put a file in a bucket (the private 'taal' one by default). Returns the stored path."""
         self._check(
             self.http.post(
-                f"{self.url}/storage/v1/object/taal/{path}",
+                f"{self.url}/storage/v1/object/{bucket}/{path}",
                 content=data,
                 headers={"Content-Type": content_type, "x-upsert": "true"},
             )

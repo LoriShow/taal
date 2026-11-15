@@ -7,7 +7,7 @@ with animated films that teach the child and parents to play together.
 
 - `worker/` — Python job runner (Railway service `taal-worker`, root directory `/worker`).
 - `supabase/migrations/` — database schema (Supabase project `taal`).
-- `web/` — the site (not built yet; Railway service `taal-web`).
+- `web/` — the site: static HTML, CSS and JS served by nginx (Railway service `taal-web`, root directory `/web`). Home page, song player, and the family area (sign-in, links, instrument photos). `config.js` holds public values only.
 
 ## Rules that shape the code
 
@@ -30,6 +30,7 @@ Job types so far:
 | `ping` | Proves the queue works end to end |
 | `read_instrument` | Reads a family's instrument photo with Claude: what it is, its layout, and whether its notes are known |
 | `check_song` | Runs the tune and plan rules on a draft song; marks it `checked` |
+| `publish_sample` | Copies a song's audio to the public bucket so anyone can play it on the site |
 | `backing_track` | Generates the backing track with ElevenLabs Music and stores it |
 
 Queue a job by inserting a row in `taal_jobs` (`type`, `song_id`). `read_instrument` takes
