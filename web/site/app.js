@@ -135,6 +135,7 @@
   function start() {
     if (!ensureCtx()) { $("score").textContent = "This browser cannot play sound here."; return; }
     NOTES.forEach(function (n) { n.hit = false; });
+    filmHide();
     P.gain = P.ctx.createGain(); P.gain.connect(P.ctx.destination);
     P.startCtx = P.ctx.currentTime + (P.audio ? 0 : 0.12);
     NOTES.forEach(function (n) { if (!n.turn) tone(n.p, P.startCtx + n.t, P.gain, 0.45); });
@@ -166,6 +167,7 @@
       if (i >= 0 && i + 1 < ALBUM.length) { setupSong(ALBUM[i + 1]); start(); return; }
     }
     if (albumMode) { albumMode = false; $("playall").textContent = "Play the whole album"; }
+    if (finished) filmCheer(); else filmHide();
   }
   function fmt(t) { var s = Math.max(0, Math.floor(t)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function draw(t, idle) {
@@ -196,7 +198,6 @@
       f.classList.toggle("hop", onBeat && !playing);
     });
     $("stage").classList.toggle("turn", !!cur && cur.kind === "turn");
-    filmDraw(t, idle, cur);
   }
   function frame() {
     if (!P.playing) return;
@@ -237,30 +238,39 @@
   var STAGE = { drum: null, friends: [] };
   function pub(path) { return CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + path; }
   var FILM = null;
-  // A cast is a set of short film clips that all start and end on the same pose, so any order
-  // cuts cleanly. Each clip covers two bars of music; its speed is set to the song's tempo.
+  // A cast is a still picture of the child's chosen band. Nothing moves while the song plays,
+  // so the keys keep the child's eyes. One short clip of the band plays once as a reward at the end.
   function loadCast(cast) {
     var stageEl = $("stage");
     Array.prototype.slice.call(stageEl.querySelectorAll("video.film")).forEach(function (v) { v.pause(); v.remove(); });
-    FILM = { id: cast.id, els: {}, active: null, section: -1, seconds: cast.clipSeconds || 5 };
+    FILM = { id: cast.id, cheer: null };
     stageEl.style.backgroundImage = "url(" + pub(cast.poster) + ")";
-    stageEl.classList.remove("has-cover"); STAGE.backdrop = true;
+    stageEl.classList.remove("has-cover"); stageEl.classList.add("still"); STAGE.backdrop = true;
     $("hopper").style.display = "none";
-    var film = FILM;
-    Object.keys(cast.clips).forEach(function (kind) {
-      var path = cast.clips[kind];
-      if (!path) return;
-      var v = document.createElement("video");
-      v.className = "stagevid film"; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
+    var path = cast.clips && (cast.clips.outro || cast.clips.together || cast.clips.play);
+    if (path) {
+      var film = FILM, v = document.createElement("video");
+      v.className = "stagevid film"; v.muted = true; v.loop = false; v.playsInline = true; v.preload = "metadata";
       v.setAttribute("playsinline", ""); v.style.opacity = "0";
-      v.addEventListener("canplay", function () { film.els[kind] = v; }, { once: true });
+      v.addEventListener("ended", function () { v.style.opacity = "0"; });
       v.src = pub(path);
       stageEl.insertBefore(v, stageEl.firstChild);
-    });
+      film.cheer = v;
+    }
     Array.prototype.forEach.call(document.querySelectorAll("#casts button"), function (b) {
       b.setAttribute("aria-pressed", b.dataset.id === cast.id ? "true" : "false");
     });
     try { localStorage.setItem("taal-cast", cast.id); } catch (e) {}
+  }
+  function filmHide() {
+    if (FILM && FILM.cheer) { FILM.cheer.pause(); FILM.cheer.style.opacity = "0"; }
+  }
+  function filmCheer() {
+    if (!FILM || !FILM.cheer) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var v = FILM.cheer;
+    try { v.currentTime = 0; } catch (e) {}
+    v.play().then(function () { v.style.opacity = "1"; }).catch(function () {});
   }
   if (CFG.casts && CFG.casts.length) {
     var bar = $("casts"), saved = null;
@@ -276,32 +286,6 @@
     $("castbar").hidden = false;
     loadCast(CFG.casts.filter(function (c) { return c.id === saved; })[0] || CFG.casts[0]);
   }
-  function filmKind(sec, index) {
-    if (sec.kind === "turn") return "turn";
-    if (/together/i.test(sec.name)) return "together";
-    if (!sec.tune) return index === 0 ? "intro" : "outro";
-    return "play";
-  }
-  function filmDraw(t, idle, cur) {
-    if (!FILM) return;
-    if (idle || !cur) {
-      if (FILM.active) { FILM.active.pause(); FILM.active.style.opacity = "0"; FILM.active = null; }
-      FILM.section = -1; return;
-    }
-    var index = SECTIONS.indexOf(cur);
-    if (index === FILM.section && FILM.active) return;
-    var v = FILM.els[filmKind(cur, index)] || FILM.els.play;
-    if (!v) return;
-    FILM.section = index;
-    if (FILM.active && FILM.active !== v) { FILM.active.pause(); FILM.active.style.opacity = "0"; }
-    var twoBars = 2 * PER_BAR * BEAT;
-    var rate = Math.max(0.5, Math.min(2, FILM.seconds / twoBars));
-    v.playbackRate = rate;
-    try { v.currentTime = (((t - cur.start) % twoBars) * rate) % FILM.seconds; } catch (e) {}
-    v.style.opacity = "1"; FILM.active = v;
-    v.play().catch(function () {});
-  }
-
   if (CFG.theme && !(CFG.casts && CFG.casts.length)) {
     var cast = $("cast"), spots = [["24%", "27%", "17%"], ["76%", "27%", "17%"], ["62%", "58%", "11%"]];
     var addChar = function (path, cls, x, b, w, done) {

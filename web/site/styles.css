@@ -189,3 +189,7 @@ footer .wrap { flex-direction: row; }
 .casts button { display: flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; font-size: .9rem; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 4px 12px 4px 4px; cursor: pointer; }
 .casts button img { width: 64px; height: 36px; object-fit: cover; border-radius: 8px; display: block; background: var(--band); }
 .casts button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+
+/* Still stage: a small picture of the chosen band, so the keys stay the main thing. */
+.stage.still { max-width: 400px; max-height: 225px; margin-inline: auto; }
+.stage.still .dots { display: none; }
