@@ -212,3 +212,6 @@ footer .wrap { flex-direction: row; }
 @keyframes twang { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) { .string.due .sline { animation: none; } }
 .lyretip { font-size: .9rem; }
+
+/* The hidden attribute always wins over display rules. */
+[hidden] { display: none !important; }
