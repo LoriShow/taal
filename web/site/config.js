@@ -9,7 +9,15 @@ window.TAAL = {
     video: "themes/pond/loop-v1",
     backdrop: "themes/pond/backdrop-v1",
     drum: "themes/pond/drum-v1",
-    friends: ["themes/pond/duck-v1", "themes/pond/turtle-v1", "themes/pond/firefly-v1"]
+    friends: ["themes/pond/duck-v1", "themes/pond/turtle-v1", "themes/pond/firefly-v1"],
+    // Film clips in a 3D animated style. When present they replace the cut-out cast above.
+    // Every clip starts and ends on the poster's pose and lasts clipSeconds (two bars of music).
+    film: {
+      name: "Forest pond band",
+      poster: "themes/forest3d/key-v1",
+      clipSeconds: 5,
+      clips: { play: "themes/forest3d/play-v1", turn: null, together: null, intro: null, outro: null }
+    }
   },
   // Shown if the database cannot be reached.
   fallbackSong: {

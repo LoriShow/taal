@@ -196,6 +196,7 @@
       f.classList.toggle("hop", onBeat && !playing);
     });
     $("stage").classList.toggle("turn", !!cur && cur.kind === "turn");
+    filmDraw(t, idle, cur);
   }
   function frame() {
     if (!P.playing) return;
@@ -235,7 +236,52 @@
   /* The themed stage. Every piece is optional: whatever fails to load is simply left out. */
   var STAGE = { drum: null, friends: [] };
   function pub(path) { return CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + path; }
-  if (CFG.theme) {
+  var FILM = null;
+  if (CFG.theme && CFG.theme.film) {
+    // A film theme: short clips that all start and end on the same pose, so any order cuts cleanly.
+    // Each clip covers two bars of music; its speed is set to the song's tempo.
+    FILM = { els: {}, active: null, section: -1, seconds: CFG.theme.film.clipSeconds || 5 };
+    var stageEl = $("stage");
+    stageEl.style.backgroundImage = "url(" + pub(CFG.theme.film.poster) + ")";
+    stageEl.classList.remove("has-cover"); STAGE.backdrop = true;
+    $("hopper").style.display = "none";
+    Object.keys(CFG.theme.film.clips).forEach(function (kind) {
+      var path = CFG.theme.film.clips[kind];
+      if (!path) return;
+      var v = document.createElement("video");
+      v.className = "stagevid film"; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
+      v.setAttribute("playsinline", ""); v.style.opacity = "0";
+      v.addEventListener("canplay", function () { FILM.els[kind] = v; }, { once: true });
+      v.src = pub(path);
+      stageEl.insertBefore(v, stageEl.firstChild);
+    });
+  }
+  function filmKind(sec, index) {
+    if (sec.kind === "turn") return "turn";
+    if (/together/i.test(sec.name)) return "together";
+    if (!sec.tune) return index === 0 ? "intro" : "outro";
+    return "play";
+  }
+  function filmDraw(t, idle, cur) {
+    if (!FILM) return;
+    if (idle || !cur) {
+      if (FILM.active) { FILM.active.pause(); FILM.active.style.opacity = "0"; FILM.active = null; }
+      FILM.section = -1; return;
+    }
+    var index = SECTIONS.indexOf(cur);
+    if (index === FILM.section) return;
+    FILM.section = index;
+    var v = FILM.els[filmKind(cur, index)] || FILM.els.play;
+    if (!v) return;
+    if (FILM.active && FILM.active !== v) { FILM.active.pause(); FILM.active.style.opacity = "0"; }
+    var twoBars = 2 * PER_BAR * BEAT;
+    v.playbackRate = Math.max(0.5, Math.min(2, FILM.seconds / twoBars));
+    try { v.currentTime = 0; } catch (e) {}
+    v.style.opacity = "1"; FILM.active = v;
+    v.play().catch(function () {});
+  }
+
+  if (CFG.theme && !CFG.theme.film) {
     var cast = $("cast"), spots = [["24%", "27%", "17%"], ["76%", "27%", "17%"], ["62%", "58%", "11%"]];
     var addChar = function (path, cls, x, b, w, done) {
       var im = new Image();

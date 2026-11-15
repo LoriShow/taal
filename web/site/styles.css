@@ -178,3 +178,6 @@ footer .wrap { flex-direction: row; }
 .stage.turn .char.friend.play { transform: translateX(-50%) translateY(-12%) scale(.95); }
 @keyframes breathe { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.03, .98); } }
 @media (prefers-reduced-motion: reduce) { .char { transition: none; animation: none; } .char.hop, .char.play { transform: translateX(-50%); } }
+
+.stagevid.film { transition: opacity .15s linear; }
+.stage.turn .dots i { opacity: .6; }
