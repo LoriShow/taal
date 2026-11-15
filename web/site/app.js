@@ -30,9 +30,25 @@
   // Play on the screen keys, or on the family's lyre. Lyre strings are counted from the longest (1) to the shortest.
   var LYRE = (CFG.lyre && CFG.lyre.strings) || ["D4", "E4", "G4", "A4", "B4", "D5", "E5"];
   var MODE = "keys";
-  try { var savedMode = localStorage.getItem("taal-mode"); if (savedMode === "lyre" || savedMode === "piano") MODE = savedMode; } catch (e) {}
+  try { var savedMode = localStorage.getItem("taal-mode"); if (["lyre", "piano", "xylo", "uke"].indexOf(savedMode) >= 0) MODE = savedMode; } catch (e) {}
   // Piano: one octave from middle C, with the right-hand finger for each note (thumb on middle C).
   var PIANO_LOW = 60, PIANO_HIGH = 72, FINGER = { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 };
+  // Toy xylophone: eight bars, C to the next C, longest bar (C) on the left.
+  var XYLO = [60, 62, 64, 65, 67, 69, 71, 72];
+  // Ukulele, standard tuning, strings as seen when holding it: G (nearest your face), C, E, A.
+  var UKE = [{ name: "G", open: 67 }, { name: "C", open: 60 }, { name: "E", open: 64 }, { name: "A", open: 69 }];
+  function ukeSpot(m) { // the open string if possible, else the lowest fret up to 3
+    for (var f = 0; f <= 3; f++) for (var i = 0; i < UKE.length; i++) if (UKE[i].open + f === m) return { s: i, f: f };
+    return null;
+  }
+  var ACTIVE = "keys";
+  var WORDS = {
+    keys: ["Tap the key that lights up.", "Tap the keys as they light up."],
+    lyre: ["Pluck the string that lights up. String 1 is the longest.", "Pluck the strings as they light up."],
+    piano: ["Press the piano key that lights up. The small number says which finger.", "Press the piano keys as they light up."],
+    xylo: ["Tap the bar that lights up, with a light bounce.", "Tap the bars as they light up."],
+    uke: ["Play the string that lights up. A number means: press that fret first.", "Play the strings as they light up."]
+  };
   var FIT = null; // lyre mode: { s: semitones the music moves, o: extra octave for the notes, map: song pitch -> string index }
   function lyreFit(pitches) {
     var L = LYRE.map(midi), order = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6];
@@ -119,8 +135,8 @@
   }
 
   function buildPlay(pitches) {
-    var keys = $("keys"), lyre = $("lyre"), piano = $("piano");
-    keys.textContent = ""; lyre.textContent = ""; piano.textContent = ""; keyEls = {};
+    var keys = $("keys"), lyre = $("lyre"), piano = $("piano"), xylo = $("xylo"), uke = $("uke");
+    keys.textContent = ""; lyre.textContent = ""; piano.textContent = ""; xylo.textContent = ""; uke.textContent = ""; keyEls = {};
     FIT = MODE === "lyre" ? lyreFit(pitches) : null;
     P.shift = FIT ? FIT.s + FIT.o : 0; P.rate = FIT ? Math.pow(2, FIT.s / 12) : 1;
     Array.prototype.forEach.call(document.querySelectorAll("#modes button"), function (b) {
@@ -128,10 +144,13 @@
     });
     var useLyre = !!FIT;
     var usePiano = MODE === "piano" && pitches.every(function (p) { return midi(p) >= PIANO_LOW && midi(p) <= PIANO_HIGH; });
-    $("lyrenofit").hidden = !((MODE === "lyre" && !FIT) || (MODE === "piano" && !usePiano));
-    keys.hidden = useLyre || usePiano; lyre.hidden = !useLyre; piano.hidden = !usePiano;
+    var useXylo = MODE === "xylo" && pitches.every(function (p) { return XYLO.indexOf(midi(p)) >= 0; });
+    var useUke = MODE === "uke" && pitches.every(function (p) { return !!ukeSpot(midi(p)); });
+    ACTIVE = useLyre ? "lyre" : usePiano ? "piano" : useXylo ? "xylo" : useUke ? "uke" : "keys";
+    $("lyrenofit").hidden = !(MODE !== "keys" && ACTIVE === "keys");
+    keys.hidden = ACTIVE !== "keys"; lyre.hidden = !useLyre; piano.hidden = !usePiano; xylo.hidden = !useXylo; uke.hidden = !useUke;
     Array.prototype.forEach.call(document.querySelectorAll("#howto [data-for]"), function (d) {
-      d.hidden = d.getAttribute("data-for") !== (useLyre ? "lyre" : usePiano ? "piano" : "keys");
+      d.hidden = d.getAttribute("data-for") !== ACTIVE;
     });
 
     cells.forEach(function (c) { if (c._p) c.textContent = useLyre ? String(FIT.map[c._p] + 1) : letter(c._p); });
@@ -157,6 +176,47 @@
           if (sp) keyEls[sp] = row;
         })(i);
       }
+    } else if (useXylo) {
+      var xBy = {};
+      pitches.forEach(function (p) { xBy[midi(p)] = p; });
+      XYLO.forEach(function (m, i) {
+        var sp = xBy[m], name = letter(["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"][m % 12]);
+        var bar = el("button", { "class": "xbar" + (sp ? " used" : ""), type: "button", "aria-label": "Bar " + name + (sp ? ", used in this song" : "") });
+        bar.style.setProperty("--h", (100 - i * 6) + "%");
+        if (sp) bar.setAttribute("data-n", letter(sp));
+        bar.appendChild(el("i", { "class": "nail" })); bar.appendChild(el("span", {}, name)); bar.appendChild(el("i", { "class": "nail" }));
+        bar.addEventListener("pointerdown", function (e) {
+          e.preventDefault();
+          if (sp) tap(sp); else { ensureCtx(); if (P.ctx) toneMidi(m, P.ctx.currentTime, null, 0.6); pluck(bar); }
+        });
+        xylo.appendChild(bar);
+        if (sp) keyEls[sp] = bar;
+      });
+    } else if (useUke) {
+      var uBy = {};
+      pitches.forEach(function (p) { var sp = ukeSpot(midi(p)); uBy[sp.s + ":" + sp.f] = p; });
+      UKE.forEach(function (str, si) {
+        var row = el("div", { "class": "ustring" });
+        row.appendChild(el("span", { "class": "uname" }, str.name));
+        for (var f = 0; f <= 3; f++) {
+          (function (f) {
+            var sp = uBy[si + ":" + f], cell = el("div", { "class": "ufret" + (f === 0 ? " open" : "") });
+            if (sp) {
+              var dot = el("button", { "class": "udot", type: "button", "data-n": letter(sp),
+                "aria-label": letter(sp) + ": " + str.name + " string" + (f ? ", fret " + f : ", open") });
+              dot.textContent = f ? String(f) : letter(sp);
+              dot.addEventListener("pointerdown", function (e) { e.preventDefault(); tap(sp); });
+              cell.appendChild(dot); keyEls[sp] = dot;
+            }
+            row.appendChild(cell);
+          })(f);
+        }
+        uke.appendChild(row);
+      });
+      var lab = el("div", { "class": "ufretnums" });
+      lab.appendChild(el("span", {}, ""));
+      ["open", "fret 1", "fret 2", "fret 3"].forEach(function (t) { lab.appendChild(el("span", {}, t)); });
+      uke.appendChild(lab);
     } else if (usePiano) {
       var byMidi = {}, NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
       pitches.forEach(function (p) { byMidi[midi(p)] = p; });
@@ -198,11 +258,8 @@
     }
     $("score").textContent = restText();
   }
-  function restText() {
-    if (FIT) return "Pluck the string that lights up. String 1 is the longest.";
-    if (!$("piano").hidden) return "Press the piano key that lights up. The small number says which finger.";
-    return "On a computer, the number keys play the notes too.";
-  }
+  function restText() { return ACTIVE === "keys" ? "On a computer, the number keys play the notes too." : WORDS[ACTIVE][0]; }
+
   function pluck(k) { k.classList.add("down"); setTimeout(function () { k.classList.remove("down"); }, 160); }
   function setMode(m) {
     if (P.playing) { albumMode = false; stop(false); }
@@ -287,7 +344,7 @@
     SECTIONS.forEach(function (s) { var on = !idle && t >= s.start && t < s.end; s.el.classList.toggle("active", on); if (on) cur = s; });
     $("now").textContent = idle ? "Ready" : (cur ? cur.say : "");
     $("now").classList.toggle("turn", !!cur && cur.kind === "turn");
-    var words = idle || !cur ? "" : (cur.kind === "turn" ? (FIT ? "Pluck the strings as they light up." : (!$("piano").hidden ? "Press the piano keys as they light up." : "Tap the keys as they light up.")) : cur.lines.join("\n"));
+    var words = idle || !cur ? "" : (cur.kind === "turn" ? WORDS[ACTIVE][1] : cur.lines.join("\n"));
     if ($("lyrics").textContent !== words) $("lyrics").textContent = words;
     $("beat").classList.toggle("on", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.25);
     var inTune = cur && cur.tune ? Math.floor((t - cur.start) / BEAT) : -1;
