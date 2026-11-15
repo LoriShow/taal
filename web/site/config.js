@@ -9,7 +9,10 @@ window.TAAL = {
       alt: "Album cover: a smiling drum and its friends playing music by a paper pond" },
     { id: "album2", eyebrow: "Album two", title: "Five Notes, All Day Long", tab: "Album two · 5 notes",
       blurb: "Nine songs from morning to bedtime, all on five notes: C, D, E, G and A.", cover: "covers/album2-v1",
-      alt: "Album cover: a little drum and friends greeting the morning sun" }
+      alt: "Album cover: a little drum and friends greeting the morning sun" },
+    { id: "album3", eyebrow: "Album three", title: "Animal Parade", tab: "Album three · rhythm",
+      blurb: "Nine animal songs on the same five notes, with long notes, short notes and rests.", cover: "covers/album3-v1",
+      alt: "Album cover: a little drum leading a parade of paper animals" }
   ],
   // The stage: an animated backdrop, and characters the page moves on the beat.
   theme: {
