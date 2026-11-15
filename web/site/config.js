@@ -21,7 +21,10 @@ window.TAAL = {
       alt: "Album cover: a little drum climbing a paper ladder up to the stars" },
     { id: "album6", eyebrow: "Album six", title: "Sa Re Ga Pa", tab: "Album six · festivals",
       blurb: "Nine festival songs on five notes, sung with their Indian names: Sa, Re, Ga, Pa, Dha.", cover: "covers/album6-v1",
-      alt: "Album cover: a little drum with diyas, kites and rangoli for a festival" }
+      alt: "Album cover: a little drum with diyas, kites and rangoli for a festival" },
+    { id: "album7", eyebrow: "Album seven", title: "चलो बजाएँ · Chalo Bajaayein", tab: "Album seven · Hindi",
+      blurb: "Nine simple Hindi songs: an elephant, the rain, the moon, the kitchen, a bicycle and Dadi's stories.", cover: "covers/album7-v1",
+      alt: "Album cover: a little drum with an elephant, a bicycle and the moon on a rainy evening" }
   ],
   // The stage: an animated backdrop, and characters the page moves on the beat.
   theme: {

@@ -133,7 +133,7 @@ def load_album(db, job: dict) -> dict:
                     "taal_songs",
                     {
                         "family_id": family_id, "album": album, "track": item["track"],
-                        "title": item["title"], "level": item["level"], "language": "en",
+                        "title": item["title"], "level": item["level"], "language": item.get("language", "en"),
                         "tune": item["tune"], "plan": item["plan"], "lyrics": item["lyrics"],
                     },
                 )
