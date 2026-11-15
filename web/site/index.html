@@ -65,6 +65,7 @@
           <button id="playall" class="btn" type="button">Play the whole album</button>
         </div>
       </div>
+      <div class="nextup" id="nextup" hidden></div>
       <ol id="tracks" class="tracks" aria-label="Album one"></ol>
       <div class="card player" aria-label="Player">
         <div class="controls">
@@ -83,6 +84,10 @@
           <div class="cast" id="cast">
             <svg viewBox="0 0 40 40" class="hopper" id="hopper"><use href="#dhin"/></svg>
           </div>
+        </div>
+        <div class="modebar" id="whobar" hidden>
+          <span class="castlabel">Who's playing?</span>
+          <div class="modes" id="who-chips"></div>
         </div>
         <div class="modebar">
           <span class="castlabel">Your instrument</span>
@@ -110,6 +115,7 @@
         <div class="xylo" id="xylo" hidden></div>
         <div class="uke" id="uke" hidden></div>
         <p class="muted" id="lyrenofit" hidden>This song needs a note your instrument doesn't have here, so it plays on the screen keys.</p>
+        <div class="reward" id="reward" role="status" hidden></div>
         <p class="muted" id="score">On a computer, the number keys play the notes too.</p>
         <p class="muted" id="audiostate"></p>
       </div>
@@ -274,6 +280,18 @@
           </div>
 
           <div class="card">
+            <h3>Your players</h3>
+            <p class="muted">Add each child who plays, so Taal can keep their stars and suggest the next song. A first name or nickname is enough.</p>
+            <ul id="kids" class="kids"></ul>
+            <form id="kid-form" class="row">
+              <label class="grow" for="kid-name">Child's name or nickname<input id="kid-name" required maxlength="30" autocomplete="off"></label>
+              <button class="btn primary" type="submit">Add</button>
+            </form>
+            <label class="check" for="kid-consent"><input id="kid-consent" type="checkbox" required form="kid-form"> I'm their parent or guardian, and I'm happy for Taal to keep a record of what they play.</label>
+            <p class="muted" id="kid-msg" role="status"></p>
+          </div>
+
+          <div class="card">
             <h3>3. Your songs</h3>
             <ul id="songs" class="list"></ul>
             <p class="muted">Sound cards and songs are made by the Taal team for now. Once your links and instrument are in, we'll let you know when your first song is ready.</p>
@@ -309,5 +327,6 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="studio.js"></script>
+<script src="progress.js"></script>
 </body>
 </html>

@@ -327,6 +327,12 @@
       var got = turn.filter(function (n) { return n.hit; }).length;
       $("score").textContent = "You caught " + got + " of " + turn.length + (FIT ? " strings in your turn. " : " notes in your turn. ") +
         (got >= turn.length * 0.75 ? "Lovely playing!" : "Play again and tap as each key lights up.");
+      // Progress (progress.js) listens for this to give stars and save the play.
+      try {
+        window.dispatchEvent(new CustomEvent("taal:finished", { detail: {
+          song: song, turn: turn.length, hits: got, seconds: Math.round(TOTAL / P.rate), instrument: ACTIVE
+        } }));
+      } catch (e) {}
     }
     draw(0, true);
     if (finished && albumMode) {
@@ -392,7 +398,14 @@
   });
   // Taal Studio loads drafts into this same player.
   window.TaalPlayer = {
-    load: function (s) { if (P.playing) { albumMode = false; stop(false); } setupSong(s); }
+    load: function (s) { if (P.playing) { albumMode = false; stop(false); } setupSong(s); },
+    select: function (id) {
+      var x = ALBUM.filter(function (a) { return a.id === id; })[0];
+      if (!x) return;
+      albumMode = false; $("playall").textContent = "Play the whole album";
+      if (P.playing) stop(false);
+      setupSong(x);
+    }
   };
   $("playbtn").addEventListener("click", function () {
     if (P.playing) { albumMode = false; stop(false); } else start();
@@ -514,6 +527,7 @@
           li.appendChild(b); ol.appendChild(li);
         });
         if (!P.playing) setupSong(list[0]);
+        try { window.dispatchEvent(new CustomEvent("taal:album", { detail: list })); } catch (e) {}
       });
   }
 

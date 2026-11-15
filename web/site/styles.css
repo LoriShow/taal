@@ -291,3 +291,20 @@ textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px 
 .st-song-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .st-song-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; background: var(--bg); border-radius: 12px; padding: 10px 14px; }
 .st-song-list b { font-family: var(--font-display); font-size: 1.1rem; }
+
+/* Progress and rewards */
+.reward { background: #fff6e0; border: 2px solid #f2c94c; border-radius: 16px; padding: 14px 18px; text-align: center; }
+.reward .stars { font-size: 2.6rem; letter-spacing: .15em; color: #e6a700; line-height: 1.1; }
+.reward .stars .off { color: #e7dcc0; }
+.reward p { margin: 6px 0 0; font-weight: 700; }
+.reward .levelup { margin-top: 8px; color: var(--accent); font-family: var(--font-display); font-size: 1.3rem; }
+.trackstars { display: block; font-size: .95rem; letter-spacing: .1em; color: #e6a700; }
+.trackstars .off { color: #d9d4c7; }
+.tracks button[aria-current="true"] .trackstars .off { color: rgba(255,255,255,.45); }
+.tracks .later small::after { content: " · after 3 songs with 2 stars"; }
+.nextup { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 12px 18px; margin-bottom: 12px; }
+.nextup b { font-family: var(--font-display); font-size: 1.2rem; }
+.kids { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.kids li { background: var(--bg); border-radius: 12px; padding: 12px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.kids li b { font-family: var(--font-display); font-size: 1.2rem; }
+.kids .week { color: var(--muted); font-size: .95rem; }
