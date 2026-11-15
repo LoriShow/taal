@@ -272,7 +272,9 @@
     try { v.currentTime = 0; } catch (e) {}
     v.play().then(function () { v.style.opacity = "1"; }).catch(function () {});
   }
-  if (CFG.casts && CFG.casts.length) {
+  // Pictures on the player are switched off: the keys are the only thing to watch.
+  if (CFG.stage === false) { $("stage").style.display = "none"; $("castbar").hidden = true; }
+  if (CFG.stage !== false && CFG.casts && CFG.casts.length) {
     var bar = $("casts"), saved = null;
     try { saved = localStorage.getItem("taal-cast"); } catch (e) {}
     CFG.casts.forEach(function (cast) {
@@ -286,7 +288,7 @@
     $("castbar").hidden = false;
     loadCast(CFG.casts.filter(function (c) { return c.id === saved; })[0] || CFG.casts[0]);
   }
-  if (CFG.theme && !(CFG.casts && CFG.casts.length)) {
+  if (CFG.stage !== false && CFG.theme && !(CFG.casts && CFG.casts.length)) {
     var cast = $("cast"), spots = [["24%", "27%", "17%"], ["76%", "27%", "17%"], ["62%", "58%", "11%"]];
     var addChar = function (path, cls, x, b, w, done) {
       var im = new Image();

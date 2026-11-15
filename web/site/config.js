@@ -14,6 +14,8 @@ window.TAAL = {
   // Bands the child can choose. Each is a key picture plus five short film clips that start and
   // end on that picture and stand for two bars of music. When casts exist they replace the
   // cut-out theme above.
+  // false = no picture on the player (15 Nov: band pictures looked off). Casts kept for later.
+  stage: false,
   casts: [
     { id: "forest", name: "Forest band", poster: "themes/forest3d/key-v1", clipSeconds: 5,
       clips: { play: "themes/forest3d/play-v1", turn: "themes/forest3d/turn-v1", together: "themes/forest3d/together-v1", intro: "themes/forest3d/intro-v1", outro: "themes/forest3d/outro-v1" } },
