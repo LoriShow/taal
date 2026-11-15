@@ -338,3 +338,16 @@ textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px 
 .series b { display: block; font-family: var(--font-display); font-size: 1.1rem; }
 .series small { display: block; color: var(--accent); font-weight: 700; margin: 2px 0 6px; }
 .series p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+/* Phones: the header stays one slim row; the menu scrolls sideways instead of wrapping onto a second row. */
+@media (max-width: 720px) {
+  .top { flex-wrap: nowrap; gap: 12px; padding: 8px 12px; }
+  .top nav { flex-wrap: nowrap; overflow-x: auto; gap: 4px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a { white-space: nowrap; font-size: .9rem; }
+}
+@media (max-width: 720px) {
+  #albumtabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  #albumtabs::-webkit-scrollbar { display: none; }
+  #albumtabs button { white-space: nowrap; flex: none; }
+}

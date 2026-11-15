@@ -616,7 +616,9 @@
       b.appendChild(t);
       b.addEventListener("click", function () {
         showAlbum(a.id, true);
-        var p = $("play"); if (p) p.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Land just below the sticky header, whatever its height on this screen.
+        var p = $("play"), top = document.querySelector(".top");
+        if (p) window.scrollTo({ top: p.getBoundingClientRect().top + window.pageYOffset - (top ? top.offsetHeight : 0) - 8, behavior: "smooth" });
       });
       var li = el("li"); li.appendChild(b); ol.appendChild(li);
     });
@@ -627,7 +629,10 @@
     try { if (id) localStorage.setItem("taal-album", id); } catch (e) {}
     var a = (CFG.albums || []).filter(function (x) { return x.id === id; })[0];
     Array.prototype.forEach.call(document.querySelectorAll("#albumtabs button"), function (b) {
-      b.setAttribute("aria-pressed", b.dataset.album === (id || "") ? "true" : "false");
+      var on = b.dataset.album === (id || "");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      // On phones the tabs scroll sideways: bring the chosen one into view without moving the page.
+      if (on && b.parentNode.scrollWidth > b.parentNode.clientWidth) b.parentNode.scrollLeft = b.offsetLeft - 20;
     });
     if (a) {
       $("album-eyebrow").textContent = a.eyebrow; $("album-title").textContent = a.title; $("album-blurb").textContent = a.blurb;
