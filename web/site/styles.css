@@ -215,3 +215,12 @@ footer .wrap { flex-direction: row; }
 
 /* The hidden attribute always wins over display rules. */
 [hidden] { display: none !important; }
+
+/* Strings used by the song take the note's colour. */
+.string .sline[data-n="C"] { background: var(--note-c); }
+.string .sline[data-n="D"] { background: var(--note-d); }
+.string .sline[data-n="E"] { background: var(--note-e); }
+.string .sline[data-n="F"] { background: var(--note-f); }
+.string .sline[data-n="G"] { background: var(--note-g); }
+.string .sline[data-n="A"] { background: var(--note-a); }
+.string .sline[data-n="B"] { background: var(--note-b); }
