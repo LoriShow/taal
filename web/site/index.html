@@ -84,19 +84,25 @@
           </div>
         </div>
         <div class="modebar">
-          <span class="castlabel">Play on</span>
+          <span class="castlabel">Your instrument</span>
           <div class="modes" id="modes">
             <button type="button" data-mode="keys" aria-pressed="true">Screen keys</button>
-            <button type="button" data-mode="lyre" aria-pressed="false">My lyre (7 strings)</button>
+            <button type="button" data-mode="lyre" aria-pressed="false">Lyre (7 strings)</button>
+            <button type="button" data-mode="piano" aria-pressed="false">Piano or keyboard</button>
           </div>
+        </div>
+        <div class="howto" id="howto">
+          <div data-for="keys"><b>Screen keys.</b> Tap the big coloured key when it lights up. Listen first; the pink "Your turn" part is yours.</div>
+          <div data-for="lyre" hidden><b>Lyre.</b> Lay it flat with the long brass strings nearest you. Count from the longest: that is string 1. Only the coloured strings are used, and the one to pluck glows. Pluck with one finger, gently. A coloured sticker by each used peg helps little hands.</div>
+          <div data-for="piano" hidden><b>Piano.</b> Sit in front of the middle of the piano. Find <b>middle C</b>: the white key just left of the two black keys in the middle. Put your right thumb on it (finger 1), then one finger on each white key to the right (2, 3, 4, 5). Press the key that glows; the small number says which finger.</div>
         </div>
         <div class="timeline" id="timeline"><div id="head"></div></div>
         <p id="lyrics" class="lyrics" aria-live="off"></p>
         <div class="roll" id="roll" aria-label="The tune"></div>
         <div class="keys" id="keys"></div>
         <div class="lyre" id="lyre" hidden></div>
-        <p class="muted lyretip" id="lyretip" hidden>Lay the lyre flat with the long brass strings nearest you: string 1 is the longest, string 7 the shortest. Only the coloured strings are used in this song. A matching coloured sticker beside each of their pegs helps little hands find them.</p>
-        <p class="muted" id="lyrenofit" hidden>This song needs a note your lyre doesn't have, so it plays on the screen keys.</p>
+        <div class="piano" id="piano" hidden></div>
+        <p class="muted" id="lyrenofit" hidden>This song needs a note your instrument doesn't have here, so it plays on the screen keys.</p>
         <p class="muted" id="score">On a computer, the number keys play the notes too.</p>
         <p class="muted" id="audiostate"></p>
       </div>

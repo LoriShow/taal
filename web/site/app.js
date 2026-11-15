@@ -30,7 +30,9 @@
   // Play on the screen keys, or on the family's lyre. Lyre strings are counted from the longest (1) to the shortest.
   var LYRE = (CFG.lyre && CFG.lyre.strings) || ["D4", "E4", "G4", "A4", "B4", "D5", "E5"];
   var MODE = "keys";
-  try { if (localStorage.getItem("taal-mode") === "lyre") MODE = "lyre"; } catch (e) {}
+  try { var savedMode = localStorage.getItem("taal-mode"); if (savedMode === "lyre" || savedMode === "piano") MODE = savedMode; } catch (e) {}
+  // Piano: one octave from middle C, with the right-hand finger for each note (thumb on middle C).
+  var PIANO_LOW = 60, PIANO_HIGH = 72, FINGER = { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5 };
   var FIT = null; // lyre mode: { s: semitones the music moves, o: extra octave for the notes, map: song pitch -> string index }
   function lyreFit(pitches) {
     var L = LYRE.map(midi), order = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6];
@@ -117,16 +119,21 @@
   }
 
   function buildPlay(pitches) {
-    var keys = $("keys"), lyre = $("lyre");
-    keys.textContent = ""; lyre.textContent = ""; keyEls = {};
+    var keys = $("keys"), lyre = $("lyre"), piano = $("piano");
+    keys.textContent = ""; lyre.textContent = ""; piano.textContent = ""; keyEls = {};
     FIT = MODE === "lyre" ? lyreFit(pitches) : null;
     P.shift = FIT ? FIT.s + FIT.o : 0; P.rate = FIT ? Math.pow(2, FIT.s / 12) : 1;
     Array.prototype.forEach.call(document.querySelectorAll("#modes button"), function (b) {
       b.setAttribute("aria-pressed", b.dataset.mode === MODE ? "true" : "false");
     });
     var useLyre = !!FIT;
-    keys.hidden = useLyre; lyre.hidden = !useLyre; $("lyretip").hidden = !useLyre;
-    $("lyrenofit").hidden = !(MODE === "lyre" && !FIT);
+    var usePiano = MODE === "piano" && pitches.every(function (p) { return midi(p) >= PIANO_LOW && midi(p) <= PIANO_HIGH; });
+    $("lyrenofit").hidden = !((MODE === "lyre" && !FIT) || (MODE === "piano" && !usePiano));
+    keys.hidden = useLyre || usePiano; lyre.hidden = !useLyre; piano.hidden = !usePiano;
+    Array.prototype.forEach.call(document.querySelectorAll("#howto [data-for]"), function (d) {
+      d.hidden = d.getAttribute("data-for") !== (useLyre ? "lyre" : usePiano ? "piano" : "keys");
+    });
+
     cells.forEach(function (c) { if (c._p) c.textContent = useLyre ? String(FIT.map[c._p] + 1) : letter(c._p); });
     if (useLyre) {
       var bySong = {};
@@ -150,6 +157,33 @@
           if (sp) keyEls[sp] = row;
         })(i);
       }
+    } else if (usePiano) {
+      var byMidi = {}, NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      pitches.forEach(function (p) { byMidi[midi(p)] = p; });
+      var whites = [];
+      for (var m = PIANO_LOW; m <= PIANO_HIGH; m++) if (NAMES[m % 12].length === 1) whites.push(m);
+      for (var m2 = PIANO_LOW; m2 <= PIANO_HIGH; m2++) {
+        (function (m) {
+          var name = NAMES[m % 12], black = name.length > 1, sp = byMidi[m];
+          var k = el("button", { "class": "pkey " + (black ? "black" : "white") + (sp ? " used" : ""), type: "button",
+            "aria-label": (m === 60 ? "Middle C" : name.replace("#", " sharp")) + (sp ? ", used in this song" : "") });
+          if (black) {
+            var wi = whites.indexOf(m - 1);
+            k.style.left = ((wi + 1) * 100 / whites.length) + "%";
+          } else {
+            if (sp) k.setAttribute("data-n", letter(sp));
+            if (sp && FINGER[m]) k.appendChild(el("span", { "class": "finger" }, String(FINGER[m])));
+            k.appendChild(el("span", { "class": "pname" }, m === 60 ? "C" : name));
+            if (m === 60) k.appendChild(el("small", {}, "middle C"));
+          }
+          k.addEventListener("pointerdown", function (e) {
+            e.preventDefault();
+            if (sp) tap(sp); else { ensureCtx(); if (P.ctx) toneMidi(m, P.ctx.currentTime, null, 0.6); pluck(k); }
+          });
+          piano.appendChild(k);
+          if (sp) keyEls[sp] = k;
+        })(m2);
+      }
     } else {
       pitches.forEach(function (p, i) {
         var k = el("button", { "class": "key", type: "button", "data-n": letter(p), "aria-label": "Play " + letter(p) });
@@ -162,7 +196,11 @@
     }
     $("score").textContent = restText();
   }
-  function restText() { return FIT ? "Pluck the string that lights up. String 1 is the longest." : "On a computer, the number keys play the notes too."; }
+  function restText() {
+    if (FIT) return "Pluck the string that lights up. String 1 is the longest.";
+    if (!$("piano").hidden) return "Press the piano key that lights up. The small number says which finger.";
+    return "On a computer, the number keys play the notes too.";
+  }
   function pluck(k) { k.classList.add("down"); setTimeout(function () { k.classList.remove("down"); }, 160); }
   function setMode(m) {
     if (P.playing) { albumMode = false; stop(false); }
@@ -247,7 +285,7 @@
     SECTIONS.forEach(function (s) { var on = !idle && t >= s.start && t < s.end; s.el.classList.toggle("active", on); if (on) cur = s; });
     $("now").textContent = idle ? "Ready" : (cur ? cur.say : "");
     $("now").classList.toggle("turn", !!cur && cur.kind === "turn");
-    var words = idle || !cur ? "" : (cur.kind === "turn" ? (FIT ? "Pluck the strings as they light up." : "Tap the keys as they light up.") : cur.lines.join("\n"));
+    var words = idle || !cur ? "" : (cur.kind === "turn" ? (FIT ? "Pluck the strings as they light up." : (!$("piano").hidden ? "Press the piano keys as they light up." : "Tap the keys as they light up.")) : cur.lines.join("\n"));
     if ($("lyrics").textContent !== words) $("lyrics").textContent = words;
     $("beat").classList.toggle("on", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.25);
     var inTune = cur && cur.tune ? Math.floor((t - cur.start) / BEAT) : -1;
