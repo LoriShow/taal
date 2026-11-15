@@ -164,6 +164,7 @@
   if ($("tracks")) $("tracks").addEventListener("click", function () { $("reward").hidden = true; });
 
   window.addEventListener("taal:album", function (e) { album = e.detail || []; drawAll(); });
+  window.addEventListener("taal:tracks", function () { drawTracks(); });
 
   /* ---------- signing in, children ---------- */
   function load() {

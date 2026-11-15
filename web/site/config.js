@@ -3,6 +3,14 @@ window.TAAL = {
   supabaseUrl: "https://rnwvdwdanyldnrstwxcc.supabase.co",
   supabaseKey: "sb_publishable_tH8Yo0dtrDowqOxfigxX_Q_REZgTtw0",
   albumCover: "covers/album1-v1",
+  albums: [
+    { id: "album1", eyebrow: "Album one", title: "Three Little Notes and friends", tab: "Album one · 3 notes",
+      blurb: "Nine songs. The first six use three notes; the last three add two more.", cover: "covers/album1-v1",
+      alt: "Album cover: a smiling drum and its friends playing music by a paper pond" },
+    { id: "album2", eyebrow: "Album two", title: "Five Notes, All Day Long", tab: "Album two · 5 notes",
+      blurb: "Nine songs from morning to bedtime, all on five notes: C, D, E, G and A.", cover: "covers/album2-v1",
+      alt: "Album cover: a little drum and friends greeting the morning sun" }
+  ],
   // The stage: an animated backdrop, and characters the page moves on the beat.
   theme: {
     name: "Paper pond",

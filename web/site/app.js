@@ -400,8 +400,9 @@
   window.TaalPlayer = {
     load: function (s) { if (P.playing) { albumMode = false; stop(false); } setupSong(s); },
     select: function (id) {
-      var x = ALBUM.filter(function (a) { return a.id === id; })[0];
+      var x = ALL_SONGS.filter(function (a) { return a.id === id; })[0];
       if (!x) return;
+      if (x.album && x.album !== ALBUM_ID) showAlbum(x.album, false);
       albumMode = false; $("playall").textContent = "Play the whole album";
       if (P.playing) stop(false);
       setupSong(x);
@@ -494,7 +495,7 @@
     vid.src = pub(CFG.theme.video);
   }
 
-  if (CFG.albumCover) {
+  if (CFG.albumCover && !CFG.albums) {
     var coverUrl = CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + CFG.albumCover;
     var probe = new Image();
     probe.onload = function () {
@@ -506,29 +507,65 @@
 
   setupSong(CFG.fallbackSong);
   if (sb) {
-    sb.from("taal_songs").select("id,title,level,track,tune,plan,sample_audio_path").eq("is_sample", true)
-      .order("track").order("created_at").then(function (r) {
-        var list = (r.data || []).filter(function (x) { return x.tune && x.plan; });
-        if (!list.length) return;
-        ALBUM = list;
-        var ol = $("tracks"); ol.textContent = "";
-        list.forEach(function (x, i) {
-          var li = el("li"), b = el("button", { type: "button", "data-id": x.id });
-          b.appendChild(el("b", {}, String(x.track || i + 1)));
-          var t = el("span", {}, x.title || "Untitled");
-          t.appendChild(el("small", {}, "Level " + (x.level || 1) + " · " + x.tune.bpm + " beats a minute"));
-          b.appendChild(t);
-          b.addEventListener("click", function () {
-            albumMode = false; $("playall").textContent = "Play the whole album";
-            if (P.playing) stop(false);
-            if (P.audio) { P.audio.pause(); }
-            setupSong(x);
-          });
-          li.appendChild(b); ol.appendChild(li);
+    sb.from("taal_songs").select("id,title,level,track,album,tune,plan,sample_audio_path").eq("is_sample", true)
+      .order("album").order("track").order("created_at").then(function (r) {
+        var all = (r.data || []).filter(function (x) { return x.tune && x.plan; });
+        if (!all.length) return;
+        ALL_SONGS = all;
+        var albums = (CFG.albums || [{ id: null }]).filter(function (a) {
+          return !a.id || all.some(function (x) { return x.album === a.id; });
         });
-        if (!P.playing) setupSong(list[0]);
-        try { window.dispatchEvent(new CustomEvent("taal:album", { detail: list })); } catch (e) {}
+        var tabs = $("albumtabs"); tabs.textContent = "";
+        tabs.hidden = albums.length < 2;
+        albums.forEach(function (a) {
+          var t = el("button", { type: "button", "data-album": a.id || "" }, a.tab || a.title || "Album");
+          t.addEventListener("click", function () { showAlbum(a.id, true); });
+          tabs.appendChild(t);
+        });
+        var saved = null; try { saved = localStorage.getItem("taal-album"); } catch (e) {}
+        showAlbum(albums.some(function (a) { return a.id === saved; }) ? saved : albums[0].id, false);
+        try { window.dispatchEvent(new CustomEvent("taal:album", { detail: all })); } catch (e) {}
       });
+  }
+
+  var ALL_SONGS = [], ALBUM_ID = null;
+  function showAlbum(id, chosen) {
+    ALBUM_ID = id;
+    try { if (id) localStorage.setItem("taal-album", id); } catch (e) {}
+    var a = (CFG.albums || []).filter(function (x) { return x.id === id; })[0];
+    Array.prototype.forEach.call(document.querySelectorAll("#albumtabs button"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.album === (id || "") ? "true" : "false");
+    });
+    if (a) {
+      $("album-eyebrow").textContent = a.eyebrow; $("album-title").textContent = a.title; $("album-blurb").textContent = a.blurb;
+      $("tracks").setAttribute("aria-label", a.eyebrow);
+      if (a.cover) {
+        var url = CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + a.cover, img = new Image();
+        img.onload = function () { if (ALBUM_ID === id) { $("cover").src = url; $("cover").alt = a.alt || ""; $("cover").hidden = false; } };
+        img.onerror = function () { if (ALBUM_ID === id) $("cover").hidden = true; };
+        img.src = url;
+      }
+    }
+    var list = ALL_SONGS.filter(function (x) { return !id || x.album === id; });
+    ALBUM = list;
+    albumMode = false; $("playall").textContent = "Play the whole album";
+    var ol = $("tracks"); ol.textContent = "";
+    list.forEach(function (x, i) {
+      var li = el("li"), b = el("button", { type: "button", "data-id": x.id });
+      b.appendChild(el("b", {}, String(x.track || i + 1)));
+      var t = el("span", {}, x.title || "Untitled");
+      t.appendChild(el("small", {}, "Level " + (x.level || 1) + " · " + x.tune.bpm + " beats a minute"));
+      b.appendChild(t);
+      b.addEventListener("click", function () {
+        albumMode = false; $("playall").textContent = "Play the whole album";
+        if (P.playing) stop(false);
+        if (P.audio) { P.audio.pause(); }
+        setupSong(x);
+      });
+      li.appendChild(b); ol.appendChild(li);
+    });
+    if (!P.playing && list.length && (chosen || !song || !song.id || !list.some(function (x) { return x.id === song.id; }))) setupSong(list[0]);
+    try { window.dispatchEvent(new CustomEvent("taal:tracks")); } catch (e) {}
   }
 
   /* ---------- Family area ---------- */
