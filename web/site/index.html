@@ -201,7 +201,20 @@
             <button id="st-hear" class="btn primary" type="button">Hear it in the player</button>
             <button id="st-again" class="btn" type="button">Try another tune</button>
           </div>
-          <p class="muted">You can change the words above; the player uses them when you press "Hear it". This draft plays with a simple bell and a beat click. Making it with real music is the next step.</p>
+          <p class="muted">You can change the words above; the player uses them when you press "Hear it". The draft plays with a simple bell and a beat click.</p>
+          <div class="st-make">
+            <div class="row">
+              <button id="st-make" class="btn primary" type="button">Make it with real music</button>
+              <button id="st-video" class="btn" type="button" hidden>Make a play-along video</button>
+              <a id="st-video-link" class="btn" hidden target="_blank" rel="noopener">Download the video</a>
+            </div>
+            <p class="muted" id="st-make-status" role="status">Takes about a minute. The words are sent to our music maker, so use only what you're happy to share.</p>
+          </div>
+        </div>
+
+        <div id="st-songs" class="card" hidden>
+          <p class="eyebrow">Our songs</p>
+          <ol id="st-song-list" class="st-song-list"></ol>
         </div>
       </div>
     </div>

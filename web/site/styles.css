@@ -286,3 +286,8 @@ textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px 
 .st-words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .st-words b { display: block; font-size: .9rem; margin-bottom: 4px; }
 @media (max-width: 640px) { .st-words { grid-template-columns: 1fr; } }
+
+.st-make { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.st-song-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.st-song-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; background: var(--bg); border-radius: 12px; padding: 10px 14px; }
+.st-song-list b { font-family: var(--font-display); font-size: 1.1rem; }

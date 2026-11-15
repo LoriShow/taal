@@ -218,9 +218,9 @@ def render_video(db, job: dict) -> dict:
     from . import video
 
     song = _song(db, job)
+    payload = job.get("payload") or {}
     if not song.get("sample_audio_path"):
         raise RuntimeError("the song has no public backing track yet")
-    payload = job.get("payload") or {}
     with tempfile.TemporaryDirectory() as tmp:
         backing = f"{tmp}/backing.mp3"
         r = db.http.get(f"{db.url}/storage/v1/object/public/taal-public/{song['sample_audio_path']}")
@@ -230,13 +230,20 @@ def render_video(db, job: dict) -> dict:
             f.write(r.content)
         out = f"{tmp}/video.mp4"
         started = time.time()
-        info = video.render(song, backing, out)
+        try:
+            info = video.render(song, backing, out)
+        except Exception as exc:
+            if payload.get("draft_id"):
+                _draft_part(db, payload["draft_id"], "video", {"status": "failed", "error": str(exc)[:300], "at": _stamp()})
+            raise
         with open(out, "rb") as f:
             data = f.read()
     name = payload.get("path") or (
         f"videos/{song.get('album') or 'songs'}/track{int(song.get('track') or 0):02d}-{int(time.time())}.mp4"
     )
     path = db.upload(name, data, "video/mp4", bucket="taal-public")
+    if payload.get("draft_id"):
+        _draft_part(db, payload["draft_id"], "video", {"status": "made", "path": path, "at": _stamp()})
     return {"path": path, "bytes": len(data), "seconds": info["seconds"],
             "render_seconds": round(time.time() - started, 1)}
 
@@ -268,6 +275,54 @@ def write_song(db, job: dict) -> dict:
             "playability": song["checks"]["tune"]["playability"]}
 
 
+def _draft_part(db, draft_id: str, key: str, value: dict) -> None:
+    """Set one part (make / video) of a Studio draft's record, keeping the rest."""
+    row = db.get("taal_studio_drafts", draft_id)
+    if row is None:
+        return
+    d = dict(row.get("draft") or {})
+    d[key] = value
+    db.update("taal_studio_drafts", draft_id, {"draft": d, "updated_at": _stamp()})
+
+
+def make_song(db, job: dict) -> dict:
+    """Taal Studio: turn a family's draft into a real song with an ElevenLabs backing track."""
+    import secrets
+
+    draft_id = (job.get("payload") or {}).get("draft_id")
+    row = db.get("taal_studio_drafts", draft_id) if draft_id else None
+    if row is None or not row.get("draft"):
+        raise RuntimeError("draft not found or not written yet")
+    d = row["draft"]
+    try:
+        plan_check = plan_mod.check_plan(d["plan"])
+        tune_check = tune_mod.check_tune(d["tune"], level=d.get("level", 1))
+        problems = plan_check["problems"] + tune_check["problems"]
+        if problems:
+            raise RuntimeError("the draft no longer passes the rules: " + "; ".join(problems))
+        song = db.insert("taal_songs", {
+            "family_id": row["family_id"], "level": d.get("level", 1), "title": d.get("title"),
+            "tune": d["tune"], "plan": d["plan"], "status": "checked",
+            "checks": {"tune": tune_check, "plan": plan_check},
+            "lyrics": "\n".join(sum((s.get("lines") or [] for s in d["plan"]["sections"]), [])),
+        })
+        audio, eleven_id = music.compose(d["plan"])
+        # Unguessable public address, so the player can stream it before sign-in exists.
+        path = db.upload(f"studio/{draft_id}/{secrets.token_hex(12)}.mp3", audio, "audio/mpeg", bucket="taal-public")
+        db.insert("taal_costs", {
+            "job_id": job["id"], "song_id": song["id"], "provider": "elevenlabs_music",
+            "units": round(plan_check["total_ms"] / 60000, 3), "unit": "minute",
+            "amount_usd": music.cost_usd(plan_check["total_ms"]),
+        })
+        db.update("taal_songs", song["id"], {"audio_path": path, "sample_audio_path": path, "status": "audio"})
+    except Exception as exc:
+        _draft_part(db, draft_id, "make", {"status": "failed", "error": str(exc)[:300], "at": _stamp()})
+        raise
+    _draft_part(db, draft_id, "make", {"status": "made", "song_id": song["id"], "audio_path": path, "at": _stamp()})
+    return {"song_id": song["id"], "audio_path": path, "bytes": len(audio), "elevenlabs_song_id": eleven_id,
+            "usd": music.cost_usd(plan_check["total_ms"])}
+
+
 def ping(db, job: dict) -> dict:
     """Proves the queue works end to end."""
     return {"pong": True, "echo": job.get("payload") or {}}
@@ -278,6 +333,7 @@ HANDLERS = {
     "load_album": load_album,
     "ping": ping,
     "render_video": render_video,
+    "make_song": make_song,
     "write_song": write_song,
     "publish_sample": publish_sample,
     "read_instrument": read_instrument,
