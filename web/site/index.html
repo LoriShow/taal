@@ -83,11 +83,21 @@
             <svg viewBox="0 0 40 40" class="hopper" id="hopper"><use href="#dhin"/></svg>
           </div>
         </div>
+        <div class="modebar">
+          <span class="castlabel">Play on</span>
+          <div class="modes" id="modes">
+            <button type="button" data-mode="keys" aria-pressed="true">Screen keys</button>
+            <button type="button" data-mode="lyre" aria-pressed="false">My lyre (7 strings)</button>
+          </div>
+        </div>
         <div class="timeline" id="timeline"><div id="head"></div></div>
         <p id="lyrics" class="lyrics" aria-live="off"></p>
         <div class="roll" id="roll" aria-label="The tune"></div>
         <div class="keys" id="keys"></div>
-        <p class="muted" id="score">On a computer, the number keys 1, 2 and 3 play the notes too.</p>
+        <div class="lyre" id="lyre" hidden></div>
+        <p class="muted lyretip" id="lyretip" hidden>Lay the lyre flat with the long brass strings nearest you: string 1 is the longest, string 7 the shortest. Only the coloured strings are used in this song. A matching coloured sticker beside each of their pegs helps little hands find them.</p>
+        <p class="muted" id="lyrenofit" hidden>This song needs a note your lyre doesn't have, so it plays on the screen keys.</p>
+        <p class="muted" id="score">On a computer, the number keys play the notes too.</p>
         <p class="muted" id="audiostate"></p>
       </div>
     </div>

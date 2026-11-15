@@ -16,6 +16,8 @@ window.TAAL = {
   // cut-out theme above.
   // false = no picture on the player (15 Nov: band pictures looked off). Casts kept for later.
   stage: false,
+  // The family lyre: notes from the longest string (1) to the shortest (7). Usual children's lyre tuning.
+  lyre: { strings: ["D4", "E4", "G4", "A4", "B4", "D5", "E5"] },
   casts: [
     { id: "forest", name: "Forest band", poster: "themes/forest3d/key-v1", clipSeconds: 5,
       clips: { play: "themes/forest3d/play-v1", turn: "themes/forest3d/turn-v1", together: "themes/forest3d/together-v1", intro: "themes/forest3d/intro-v1", outro: "themes/forest3d/outro-v1" } },

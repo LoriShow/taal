@@ -23,10 +23,27 @@
     for (var i = 0; i < m[2].length; i++) off += m[2][i] === "#" ? 1 : -1;
     return 12 * (parseInt(m[3], 10) + 1) + SEMI[m[1].toUpperCase()] + off;
   }
-  function hz(p) { return 440 * Math.pow(2, (midi(p) - 69) / 12); }
+  function hz(p) { return 440 * Math.pow(2, (midi(p) + P.shift - 69) / 12); }
   function letter(p) { return p[0].toUpperCase(); }
 
-  var P = { ctx: null, gain: null, startCtx: 0, playing: false, raf: 0, audio: null };
+  var P = { ctx: null, gain: null, startCtx: 0, playing: false, raf: 0, audio: null, shift: 0, rate: 1 };
+  // Play on the screen keys, or on the family's lyre. Lyre strings are counted from the longest (1) to the shortest.
+  var LYRE = (CFG.lyre && CFG.lyre.strings) || ["D4", "E4", "G4", "A4", "B4", "D5", "E5"];
+  var MODE = "keys";
+  try { if (localStorage.getItem("taal-mode") === "lyre") MODE = "lyre"; } catch (e) {}
+  var FIT = null; // lyre mode: { s: semitones the music moves, o: extra octave for the notes, map: song pitch -> string index }
+  function lyreFit(pitches) {
+    var L = LYRE.map(midi), order = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6];
+    for (var i = 0; i < order.length; i++) {
+      for (var o = -24; o <= 24; o += 12) {
+        var map = {}, ok = pitches.every(function (p) {
+          var k = L.indexOf(midi(p) + order[i] + o); if (k < 0) return false; map[p] = k; return true;
+        });
+        if (ok) return { s: order[i], o: o, map: map };
+      }
+    }
+    return null;
+  }
   var ALBUM = [], albumMode = false;
   var song = null, SECTIONS = [], NOTES = [], TOTAL = 0, BEAT = 0, PER_BAR = 4, tuneBeats = 16, keyEls = {}, cells = [];
 
@@ -70,22 +87,14 @@
     for (var b = 0; b < tuneBeats; b++) {
       var c = el("div", { "class": "cell" + (b % PER_BAR === 0 && b > 0 ? " bar" : "") });
       var n = s.tune.notes.filter(function (x) { return x.start === b; })[0];
-      if (n) { c.setAttribute("data-n", letter(n.pitch)); c.textContent = letter(n.pitch); }
+      if (n) { c.setAttribute("data-n", letter(n.pitch)); c.textContent = letter(n.pitch); c._p = n.pitch; }
       roll.appendChild(c); cells.push(c);
     }
 
-    var keys = $("keys"); keys.textContent = ""; keyEls = {};
     var pitches = [];
     s.tune.notes.forEach(function (n) { if (pitches.indexOf(n.pitch) < 0) pitches.push(n.pitch); });
     pitches.sort(function (a, b) { return midi(a) - midi(b); });
-    pitches.forEach(function (p, i) {
-      var k = el("button", { "class": "key", type: "button", "data-n": letter(p), "aria-label": "Play " + letter(p) });
-      k.appendChild(document.createTextNode(letter(p)));
-      k.appendChild(el("small", {}, "key " + (i + 1)));
-      k.addEventListener("pointerdown", function (e) { e.preventDefault(); tap(p); });
-      k.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(p); } });
-      keys.appendChild(k); keyEls[p] = k;
-    });
+    buildPlay(pitches);
     P.pitches = pitches;
     var dots = $("dots"); dots.textContent = ""; P.dotEls = {};
     pitches.forEach(function (p) { var d = el("i", { "data-n": letter(p) }); dots.appendChild(d); P.dotEls[p] = d; });
@@ -93,6 +102,9 @@
     if (s.sample_audio_path) {
       P.audio = new Audio(CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + s.sample_audio_path);
       P.audio.preload = "auto";
+      P.audio.preservesPitch = false; P.audio.mozPreservesPitch = false; P.audio.webkitPreservesPitch = false;
+      P.audio.playbackRate = P.rate; P.audio.defaultPlaybackRate = P.rate;
+      $("audiostate").textContent = FIT && FIT.s ? "Lyre mode: the music plays a little lower and slower so it matches your lyre." : "";
       P.audio.addEventListener("error", function () {
         P.audio = null;
         $("audiostate").textContent = "The backing track could not load, so you'll hear a click on each beat and the notes.";
@@ -104,12 +116,70 @@
     draw(0, true);
   }
 
+  function buildPlay(pitches) {
+    var keys = $("keys"), lyre = $("lyre");
+    keys.textContent = ""; lyre.textContent = ""; keyEls = {};
+    FIT = MODE === "lyre" ? lyreFit(pitches) : null;
+    P.shift = FIT ? FIT.s + FIT.o : 0; P.rate = FIT ? Math.pow(2, FIT.s / 12) : 1;
+    Array.prototype.forEach.call(document.querySelectorAll("#modes button"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.mode === MODE ? "true" : "false");
+    });
+    var useLyre = !!FIT;
+    keys.hidden = useLyre; lyre.hidden = !useLyre; $("lyretip").hidden = !useLyre;
+    $("lyrenofit").hidden = !(MODE === "lyre" && !FIT);
+    cells.forEach(function (c) { if (c._p) c.textContent = useLyre ? String(FIT.map[c._p] + 1) : letter(c._p); });
+    if (useLyre) {
+      var bySong = {};
+      Object.keys(FIT.map).forEach(function (p) { bySong[FIT.map[p]] = p; });
+      for (var i = LYRE.length - 1; i >= 0; i--) {
+        (function (i) {
+          var sp = bySong[i];
+          var row = el("button", { "class": "string" + (sp ? " used" : ""), type: "button",
+            "aria-label": "String " + (i + 1) + ", " + LYRE[i].replace(/\d/, "") });
+          row.style.setProperty("--len", (100 - i * 6.5) + "%");
+          row.appendChild(el("span", { "class": "snum" }, String(i + 1)));
+          var line = el("span", { "class": "sline" });
+          if (sp) line.setAttribute("data-n", letter(sp));
+          row.appendChild(line);
+          row.appendChild(el("span", { "class": "sname" }, LYRE[i].replace(/\d/, "")));
+          row.addEventListener("pointerdown", function (e) {
+            e.preventDefault();
+            if (sp) tap(sp); else { ensureCtx(); if (P.ctx) toneMidi(midi(LYRE[i]), P.ctx.currentTime, null, 0.6); pluck(row); }
+          });
+          lyre.appendChild(row);
+          if (sp) keyEls[sp] = row;
+        })(i);
+      }
+    } else {
+      pitches.forEach(function (p, i) {
+        var k = el("button", { "class": "key", type: "button", "data-n": letter(p), "aria-label": "Play " + letter(p) });
+        k.appendChild(document.createTextNode(letter(p)));
+        k.appendChild(el("small", {}, "key " + (i + 1)));
+        k.addEventListener("pointerdown", function (e) { e.preventDefault(); tap(p); });
+        k.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(p); } });
+        keys.appendChild(k); keyEls[p] = k;
+      });
+    }
+    $("score").textContent = restText();
+  }
+  function restText() { return FIT ? "Pluck the string that lights up. String 1 is the longest." : "On a computer, the number keys play the notes too."; }
+  function pluck(k) { k.classList.add("down"); setTimeout(function () { k.classList.remove("down"); }, 160); }
+  function setMode(m) {
+    if (P.playing) { albumMode = false; stop(false); }
+    MODE = m;
+    try { localStorage.setItem("taal-mode", m); } catch (e) {}
+    if (song) setupSong(song);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#modes button"), function (b) {
+    b.addEventListener("click", function () { setMode(b.dataset.mode); });
+  });
   function ensureCtx() {
     if (!P.ctx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) P.ctx = new AC(); }
     if (P.ctx && P.ctx.state === "suspended") P.ctx.resume().catch(function () {});
     return P.ctx;
   }
-  function tone(p, when, dest, vol) {
+  function tone(p, when, dest, vol) { toneMidi(midi(p) + P.shift, when, dest, vol); }
+  function toneMidi(m, when, dest, vol) {
     var ctx = P.ctx; if (!ctx) return;
     var g = ctx.createGain(); g.connect(dest || ctx.destination);
     g.gain.setValueAtTime(0.0001, when);
@@ -117,7 +187,7 @@
     g.gain.exponentialRampToValueAtTime(0.0001, when + 0.7);
     [[1, 1], [4, 0.25]].forEach(function (h) {
       var o = ctx.createOscillator(), og = ctx.createGain();
-      o.frequency.value = hz(p) * h[0]; og.gain.value = h[1];
+      o.frequency.value = 440 * Math.pow(2, (m - 69) / 12) * h[0]; og.gain.value = h[1];
       o.connect(og); og.connect(g); o.start(when); o.stop(when + 0.75);
     });
   }
@@ -130,7 +200,7 @@
   }
   function now() {
     if (P.audio && !P.audio.paused) return P.audio.currentTime;
-    return P.ctx ? P.ctx.currentTime - P.startCtx : 0;
+    return P.ctx ? (P.ctx.currentTime - P.startCtx) * P.rate : 0;
   }
   function start() {
     if (!ensureCtx()) { $("score").textContent = "This browser cannot play sound here."; return; }
@@ -138,12 +208,12 @@
     filmHide();
     P.gain = P.ctx.createGain(); P.gain.connect(P.ctx.destination);
     P.startCtx = P.ctx.currentTime + (P.audio ? 0 : 0.12);
-    NOTES.forEach(function (n) { if (!n.turn) tone(n.p, P.startCtx + n.t, P.gain, 0.45); });
+    NOTES.forEach(function (n) { if (!n.turn) tone(n.p, P.startCtx + n.t / P.rate, P.gain, 0.45); });
     if (P.audio) {
-      P.audio.currentTime = 0;
+      P.audio.currentTime = 0; P.audio.playbackRate = P.rate;
       P.audio.play().catch(function () { $("score").textContent = "The music could not start. Press Play again."; });
     } else {
-      for (var i = 0; i < Math.round(TOTAL / BEAT); i++) click(P.startCtx + i * BEAT, i % PER_BAR === 0, P.gain);
+      for (var i = 0; i < Math.round(TOTAL / BEAT); i++) click(P.startCtx + i * BEAT / P.rate, i % PER_BAR === 0, P.gain);
     }
     P.playing = true; $("playbtn").textContent = "Stop";
     $("score").textContent = "Listen first. Your turn comes after the first tune.";
@@ -154,11 +224,11 @@
     cancelAnimationFrame(P.raf);
     if (P.gain) { try { P.gain.disconnect(); } catch (e) {} P.gain = null; }
     if (P.audio) P.audio.pause();
-    $("score").textContent = "On a computer, the number keys play the notes too.";
+    $("score").textContent = restText();
     if (finished) {
       var turn = NOTES.filter(function (n) { return n.turn; });
       var got = turn.filter(function (n) { return n.hit; }).length;
-      $("score").textContent = "You caught " + got + " of " + turn.length + " notes in your turn. " +
+      $("score").textContent = "You caught " + got + " of " + turn.length + (FIT ? " strings in your turn. " : " notes in your turn. ") +
         (got >= turn.length * 0.75 ? "Lovely playing!" : "Play again and tap as each key lights up.");
     }
     draw(0, true);
@@ -172,12 +242,12 @@
   function fmt(t) { var s = Math.max(0, Math.floor(t)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function draw(t, idle) {
     $("head").style.left = (100 * Math.min(t, TOTAL) / TOTAL) + "%";
-    $("clock").textContent = fmt(t) + " / " + fmt(TOTAL);
+    $("clock").textContent = fmt(t / P.rate) + " / " + fmt(TOTAL / P.rate);
     var cur = null;
     SECTIONS.forEach(function (s) { var on = !idle && t >= s.start && t < s.end; s.el.classList.toggle("active", on); if (on) cur = s; });
     $("now").textContent = idle ? "Ready" : (cur ? cur.say : "");
     $("now").classList.toggle("turn", !!cur && cur.kind === "turn");
-    var words = idle || !cur ? "" : (cur.kind === "turn" ? "Tap the keys as they light up." : cur.lines.join("\n"));
+    var words = idle || !cur ? "" : (cur.kind === "turn" ? (FIT ? "Pluck the strings as they light up." : "Tap the keys as they light up.") : cur.lines.join("\n"));
     if ($("lyrics").textContent !== words) $("lyrics").textContent = words;
     $("beat").classList.toggle("on", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.25);
     var inTune = cur && cur.tune ? Math.floor((t - cur.start) / BEAT) : -1;
@@ -210,7 +280,7 @@
     ensureCtx();
     if (P.ctx) tone(p, P.ctx.currentTime, null, 0.6);
     var k = keyEls[p]; if (!k) return;
-    k.classList.add("down"); setTimeout(function () { k.classList.remove("down"); }, 140);
+    pluck(k);
     if (!P.playing) return;
     var t = now();
     for (var i = 0; i < NOTES.length; i++) {

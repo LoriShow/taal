@@ -193,3 +193,22 @@ footer .wrap { flex-direction: row; }
 /* Still stage: a small picture of the chosen band, so the keys stay the main thing. */
 .stage.still { max-width: 400px; max-height: 225px; margin-inline: auto; }
 .stage.still .dots { display: none; }
+
+/* Play on: screen keys or the family's lyre. */
+.modebar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.modes { display: flex; flex-wrap: wrap; gap: 8px; }
+.modes button { font: inherit; font-weight: 700; font-size: .95rem; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+.modes button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.lyre { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 18px; background: #efe2c8; }
+.string { display: grid; grid-template-columns: 2.2rem 1fr 2.4rem; align-items: center; gap: 10px; border: 0; background: transparent; padding: 7px 0; cursor: pointer; touch-action: manipulation; font: inherit; color: #8a7a5c; }
+.snum { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; text-align: center; }
+.sname { font-weight: 700; font-size: .85rem; text-align: left; }
+.sline { display: block; width: var(--len, 100%); height: 2px; border-radius: 3px; background: #b9a888; transition: height .08s; }
+.string.used { color: #3a2e1a; }
+.string.used .sline { height: 7px; }
+.string.due .sline { height: 14px; box-shadow: 0 0 0 3px #fff, 0 0 16px 6px rgba(255,255,255,.85); animation: twang .1s linear infinite alternate; }
+.string.due .snum { color: #fff; background: #3a2e1a; border-radius: 999px; }
+.string.down .sline { height: 12px; }
+@keyframes twang { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .string.due .sline { animation: none; } }
+.lyretip { font-size: .9rem; }
