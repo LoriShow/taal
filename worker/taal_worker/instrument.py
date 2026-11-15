@@ -36,7 +36,8 @@ PROMPT = (
     "standard layout of a piano-style keyboard. Otherwise leave it null; do not guess "
     "the tuning of a xylophone or toy from its looks. "
     "Set people_visible to true if any person, or part of one beyond hands, is in the photo. "
-    "If the photo shows no instrument, use kind 'none'."
+    "If the photo shows no instrument, use kind 'none'. "
+    "Answer only by calling the record_instrument tool."
 )
 
 TOOL = {
@@ -77,7 +78,7 @@ def read_photo(image: bytes, media_type: str, timeout: float = 120.0) -> dict:
         "model": MODEL,
         "max_tokens": 4000,
         "tools": [TOOL],
-        "tool_choice": {"type": "tool", "name": TOOL["name"]},
+        "tool_choice": {"type": "auto"},  # forced tool choice is not supported on this model
         "messages": [
             {
                 "role": "user",

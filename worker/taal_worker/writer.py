@@ -112,6 +112,7 @@ def _prompt(brief: dict, problems: list[str]) -> str:
         lines.append(f"This is attempt {brief['variation'] + 1}: make the tune clearly different from a plain scale.")
     if problems:
         lines.append("Your last tune broke these rules; fix every one: " + "; ".join(problems))
+    lines.append("Answer only by calling the record_song tool.")
     return "\n".join(lines)
 
 
@@ -122,7 +123,7 @@ def _ask(brief: dict, problems: list[str], timeout: float = 90.0) -> dict:
         "max_tokens": 2000,
         "system": SYSTEM,
         "tools": [TOOL],
-        "tool_choice": {"type": "tool", "name": TOOL["name"]},
+        "tool_choice": {"type": "auto"},  # forced tool choice is not supported on this model
         "messages": [{"role": "user", "content": _prompt(brief, problems)}],
     }
     r = httpx.post(API, headers={"x-api-key": key, "anthropic-version": "2023-06-01"}, json=body, timeout=timeout)
