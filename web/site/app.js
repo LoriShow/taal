@@ -237,24 +237,44 @@
   var STAGE = { drum: null, friends: [] };
   function pub(path) { return CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + path; }
   var FILM = null;
-  if (CFG.theme && CFG.theme.film) {
-    // A film theme: short clips that all start and end on the same pose, so any order cuts cleanly.
-    // Each clip covers two bars of music; its speed is set to the song's tempo.
-    FILM = { els: {}, active: null, section: -1, seconds: CFG.theme.film.clipSeconds || 5 };
+  // A cast is a set of short film clips that all start and end on the same pose, so any order
+  // cuts cleanly. Each clip covers two bars of music; its speed is set to the song's tempo.
+  function loadCast(cast) {
     var stageEl = $("stage");
-    stageEl.style.backgroundImage = "url(" + pub(CFG.theme.film.poster) + ")";
+    Array.prototype.slice.call(stageEl.querySelectorAll("video.film")).forEach(function (v) { v.pause(); v.remove(); });
+    FILM = { id: cast.id, els: {}, active: null, section: -1, seconds: cast.clipSeconds || 5 };
+    stageEl.style.backgroundImage = "url(" + pub(cast.poster) + ")";
     stageEl.classList.remove("has-cover"); STAGE.backdrop = true;
     $("hopper").style.display = "none";
-    Object.keys(CFG.theme.film.clips).forEach(function (kind) {
-      var path = CFG.theme.film.clips[kind];
+    var film = FILM;
+    Object.keys(cast.clips).forEach(function (kind) {
+      var path = cast.clips[kind];
       if (!path) return;
       var v = document.createElement("video");
       v.className = "stagevid film"; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
       v.setAttribute("playsinline", ""); v.style.opacity = "0";
-      v.addEventListener("canplay", function () { FILM.els[kind] = v; }, { once: true });
+      v.addEventListener("canplay", function () { film.els[kind] = v; }, { once: true });
       v.src = pub(path);
       stageEl.insertBefore(v, stageEl.firstChild);
     });
+    Array.prototype.forEach.call(document.querySelectorAll("#casts button"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.id === cast.id ? "true" : "false");
+    });
+    try { localStorage.setItem("taal-cast", cast.id); } catch (e) {}
+  }
+  if (CFG.casts && CFG.casts.length) {
+    var bar = $("casts"), saved = null;
+    try { saved = localStorage.getItem("taal-cast"); } catch (e) {}
+    CFG.casts.forEach(function (cast) {
+      var b = el("button", { type: "button", "data-id": cast.id, "aria-pressed": "false" });
+      var im = el("img", { alt: "", width: "96", height: "54", loading: "lazy" });
+      im.src = pub(cast.poster);
+      b.appendChild(im); b.appendChild(el("span", {}, cast.name));
+      b.addEventListener("click", function () { loadCast(cast); });
+      bar.appendChild(b);
+    });
+    $("castbar").hidden = false;
+    loadCast(CFG.casts.filter(function (c) { return c.id === saved; })[0] || CFG.casts[0]);
   }
   function filmKind(sec, index) {
     if (sec.kind === "turn") return "turn";
@@ -269,19 +289,20 @@
       FILM.section = -1; return;
     }
     var index = SECTIONS.indexOf(cur);
-    if (index === FILM.section) return;
-    FILM.section = index;
+    if (index === FILM.section && FILM.active) return;
     var v = FILM.els[filmKind(cur, index)] || FILM.els.play;
     if (!v) return;
+    FILM.section = index;
     if (FILM.active && FILM.active !== v) { FILM.active.pause(); FILM.active.style.opacity = "0"; }
     var twoBars = 2 * PER_BAR * BEAT;
-    v.playbackRate = Math.max(0.5, Math.min(2, FILM.seconds / twoBars));
-    try { v.currentTime = 0; } catch (e) {}
+    var rate = Math.max(0.5, Math.min(2, FILM.seconds / twoBars));
+    v.playbackRate = rate;
+    try { v.currentTime = (((t - cur.start) % twoBars) * rate) % FILM.seconds; } catch (e) {}
     v.style.opacity = "1"; FILM.active = v;
     v.play().catch(function () {});
   }
 
-  if (CFG.theme && !CFG.theme.film) {
+  if (CFG.theme && !(CFG.casts && CFG.casts.length)) {
     var cast = $("cast"), spots = [["24%", "27%", "17%"], ["76%", "27%", "17%"], ["62%", "58%", "11%"]];
     var addChar = function (path, cls, x, b, w, done) {
       var im = new Image();

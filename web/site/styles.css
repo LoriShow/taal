@@ -181,3 +181,10 @@ footer .wrap { flex-direction: row; }
 
 .stagevid.film { transition: opacity .15s linear; }
 .stage.turn .dots i { opacity: .6; }
+
+.castbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.castlabel { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+.casts { display: flex; flex-wrap: wrap; gap: 8px; }
+.casts button { display: flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; font-size: .9rem; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 4px 12px 4px 4px; cursor: pointer; }
+.casts button img { width: 64px; height: 36px; object-fit: cover; border-radius: 8px; display: block; background: var(--band); }
+.casts button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }

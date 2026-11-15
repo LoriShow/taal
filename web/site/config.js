@@ -9,16 +9,21 @@ window.TAAL = {
     video: "themes/pond/loop-v1",
     backdrop: "themes/pond/backdrop-v1",
     drum: "themes/pond/drum-v1",
-    friends: ["themes/pond/duck-v1", "themes/pond/turtle-v1", "themes/pond/firefly-v1"],
-    // Film clips in a 3D animated style. When present they replace the cut-out cast above.
-    // Every clip starts and ends on the poster's pose and lasts clipSeconds (two bars of music).
-    film: {
-      name: "Forest pond band",
-      poster: "themes/forest3d/key-v1",
-      clipSeconds: 5,
-      clips: { play: "themes/forest3d/play-v1", turn: null, together: null, intro: null, outro: null }
-    }
+    friends: ["themes/pond/duck-v1", "themes/pond/turtle-v1", "themes/pond/firefly-v1"]
   },
+  // Bands the child can choose. Each is a key picture plus five short film clips that start and
+  // end on that picture and stand for two bars of music. When casts exist they replace the
+  // cut-out theme above.
+  casts: [
+    { id: "forest", name: "Forest band", poster: "themes/forest3d/key-v1", clipSeconds: 5,
+      clips: { play: "themes/forest3d/play-v1", turn: "themes/forest3d/turn-v1", together: "themes/forest3d/together-v1", intro: "themes/forest3d/intro-v1", outro: "themes/forest3d/outro-v1" } },
+    { id: "mermaid", name: "Mermaid lagoon", poster: "themes/mermaid3d/key-v1", clipSeconds: 5,
+      clips: { play: "themes/mermaid3d/play-v1", turn: "themes/mermaid3d/turn-v1", together: "themes/mermaid3d/together-v1", intro: "themes/mermaid3d/intro-v1", outro: "themes/mermaid3d/outro-v1" } },
+    { id: "hero", name: "Hero rooftop", poster: "themes/hero3d/key-v1", clipSeconds: 5,
+      clips: { play: "themes/hero3d/play-v1", turn: "themes/hero3d/turn-v1", together: "themes/hero3d/together-v1", intro: "themes/hero3d/intro-v1", outro: "themes/hero3d/outro-v1" } },
+    { id: "folk", name: "Village courtyard", poster: "themes/folk2d/key-v1", clipSeconds: 5,
+      clips: { play: "themes/folk2d/play-v1", turn: "themes/folk2d/turn-v1", together: "themes/folk2d/together-v1", intro: "themes/folk2d/intro-v1", outro: "themes/folk2d/outro-v1" } }
+  ],
   // Shown if the database cannot be reached.
   fallbackSong: {
     id: "d3b59e85-17c7-45b9-8c27-bb9284d39454",
