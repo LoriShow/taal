@@ -273,7 +273,7 @@
     v.play().then(function () { v.style.opacity = "1"; }).catch(function () {});
   }
   // Pictures on the player are switched off: the keys are the only thing to watch.
-  if (CFG.stage === false) { $("stage").style.display = "none"; $("castbar").hidden = true; }
+  if (CFG.stage === false) { $("stage").style.display = "none"; $("castbar").style.display = "none"; }
   if (CFG.stage !== false && CFG.casts && CFG.casts.length) {
     var bar = $("casts"), saved = null;
     try { saved = localStorage.getItem("taal-cast"); } catch (e) {}
