@@ -136,3 +136,11 @@ input[type="email"], input[type="url"], input:not([type]), select, input[type="f
 .privacy { margin-top: 4px; }
 footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--muted); font-size: .95rem; }
 footer .wrap { flex-direction: row; }
+
+.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tracks button { width: 100%; text-align: left; font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+.tracks button b { font-family: var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.tracks button small { display: block; color: var(--muted); }
+.tracks button[aria-current="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.tracks button[aria-current="true"] b, .tracks button[aria-current="true"] small { color: var(--surface); }
+.lyrics { min-height: 3.2em; font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; line-height: 1.3; white-space: pre-line; max-width: none; }

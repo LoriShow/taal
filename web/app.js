@@ -38,10 +38,10 @@
 
     var bar = 0; SECTIONS = []; NOTES = [];
     s.plan.sections.forEach(function (sec, si) {
-      var o = { name: sec.name, bars: sec.bars, kind: sec.kind || "listen", start: bar * PER_BAR * BEAT };
+      var o = { name: sec.name, bars: sec.bars, kind: sec.kind || "listen", start: bar * PER_BAR * BEAT, lines: sec.lines || [] };
       bar += sec.bars; o.end = bar * PER_BAR * BEAT;
       o.tune = sec.bars * PER_BAR >= tuneBeats;
-      o.say = o.kind === "turn" ? "Your turn!" : (o.tune ? (si > 1 ? "Play together" : "Listen and watch") : "Listen");
+      o.say = o.kind === "turn" ? "Your turn!" : (o.tune ? (/together/i.test(o.name) ? "Play together" : "Listen and watch") : "Listen");
       SECTIONS.push(o);
       if (o.tune) s.tune.notes.forEach(function (n) {
         NOTES.push({ p: n.pitch, t: o.start + n.start * BEAT, turn: o.kind === "turn", hit: false });
@@ -50,6 +50,10 @@
     TOTAL = bar * PER_BAR * BEAT;
 
     $("song-title").textContent = s.title || "A Taal song";
+    $("song-eyebrow").textContent = (s.track ? "Song " + s.track + " · " : "") + "Level " + (s.level || 1);
+    Array.prototype.forEach.call(document.querySelectorAll("#tracks button"), function (b) {
+      b.setAttribute("aria-current", b.dataset.id === s.id ? "true" : "false");
+    });
     var timeline = $("timeline"), head = $("head");
     Array.prototype.slice.call(timeline.querySelectorAll(".sec")).forEach(function (n) { n.remove(); });
     SECTIONS.forEach(function (o) {
@@ -146,6 +150,7 @@
     cancelAnimationFrame(P.raf);
     if (P.gain) { try { P.gain.disconnect(); } catch (e) {} P.gain = null; }
     if (P.audio) P.audio.pause();
+    $("score").textContent = "On a computer, the number keys play the notes too.";
     if (finished) {
       var turn = NOTES.filter(function (n) { return n.turn; });
       var got = turn.filter(function (n) { return n.hit; }).length;
@@ -162,6 +167,8 @@
     SECTIONS.forEach(function (s) { var on = !idle && t >= s.start && t < s.end; s.el.classList.toggle("active", on); if (on) cur = s; });
     $("now").textContent = idle ? "Ready" : (cur ? cur.say : "");
     $("now").classList.toggle("turn", !!cur && cur.kind === "turn");
+    var words = idle || !cur ? "" : (cur.kind === "turn" ? "Tap the keys as they light up." : cur.lines.join("\n"));
+    if ($("lyrics").textContent !== words) $("lyrics").textContent = words;
     $("beat").classList.toggle("on", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.25);
     var inTune = cur && cur.tune ? Math.floor((t - cur.start) / BEAT) : -1;
     cells.forEach(function (c, i) { c.classList.toggle("now", i === inTune); });
@@ -197,9 +204,25 @@
 
   setupSong(CFG.fallbackSong);
   if (sb) {
-    sb.from("taal_songs").select("id,title,level,tune,plan,sample_audio_path").eq("is_sample", true)
-      .order("created_at").limit(1).then(function (r) {
-        if (r.data && r.data[0] && r.data[0].tune && r.data[0].plan && !P.playing) setupSong(r.data[0]);
+    sb.from("taal_songs").select("id,title,level,track,tune,plan,sample_audio_path").eq("is_sample", true)
+      .order("track").order("created_at").then(function (r) {
+        var list = (r.data || []).filter(function (x) { return x.tune && x.plan; });
+        if (!list.length) return;
+        var ol = $("tracks"); ol.textContent = "";
+        list.forEach(function (x, i) {
+          var li = el("li"), b = el("button", { type: "button", "data-id": x.id });
+          b.appendChild(el("b", {}, String(x.track || i + 1)));
+          var t = el("span", {}, x.title || "Untitled");
+          t.appendChild(el("small", {}, "Level " + (x.level || 1) + " · " + x.tune.bpm + " beats a minute"));
+          b.appendChild(t);
+          b.addEventListener("click", function () {
+            if (P.playing) stop(false);
+            if (P.audio) { P.audio.pause(); }
+            setupSong(x);
+          });
+          li.appendChild(b); ol.appendChild(li);
+        });
+        if (!P.playing) setupSong(list[0]);
       });
   }
 

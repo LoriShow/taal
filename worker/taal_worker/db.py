@@ -39,8 +39,18 @@ class Db:
             )
         )
 
-    def insert(self, table: str, values: dict) -> None:
-        self._check(self.http.post(f"{self.url}/rest/v1/{table}", json=values))
+    def insert(self, table: str, values: dict) -> dict:
+        r = self._check(
+            self.http.post(
+                f"{self.url}/rest/v1/{table}", json=values, headers={"Prefer": "return=representation"}
+            )
+        )
+        rows = r.json()
+        return rows[0] if rows else {}
+
+    def find(self, table: str, **equals) -> list[dict]:
+        params = {k: f"eq.{v}" for k, v in equals.items()}
+        return self._check(self.http.get(f"{self.url}/rest/v1/{table}", params=params)).json()
 
     def upload(self, path: str, data: bytes, content_type: str, bucket: str = "taal") -> str:
         """Put a file in a bucket (the private 'taal' one by default). Returns the stored path."""

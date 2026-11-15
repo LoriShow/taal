@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import pathlib
+
 from . import instrument as instrument_mod
 from . import music
 from . import plan as plan_mod
@@ -80,6 +83,46 @@ def publish_sample(db, job: dict) -> dict:
     return {"sample_audio_path": path, "bytes": len(audio)}
 
 
+CONTENT = pathlib.Path(__file__).parent / "content"
+
+
+def load_album(db, job: dict) -> dict:
+    """Create an album's songs from the bundled content file and take each one all the
+    way to a published sample: check, backing track, publish. Songs already there are skipped."""
+    payload = job.get("payload") or {}
+    album, family_id = payload.get("album"), payload.get("family_id")
+    if not album or not family_id or "/" in album or "." in album:
+        raise RuntimeError("this job needs payload.album and payload.family_id")
+    songs = json.loads((CONTENT / f"{album}.json").read_text())
+    report = []
+    for item in songs:
+        entry = {"track": item["track"], "title": item["title"]}
+        try:
+            if db.find("taal_songs", album=album, track=item["track"]):
+                entry["result"] = "already there"
+            else:
+                song = db.insert(
+                    "taal_songs",
+                    {
+                        "family_id": family_id, "album": album, "track": item["track"],
+                        "title": item["title"], "level": item["level"], "language": "en",
+                        "tune": item["tune"], "plan": item["plan"], "lyrics": item["lyrics"],
+                    },
+                )
+                step = {"id": job["id"], "song_id": song["id"]}
+                checks = check_song(db, step)
+                if not checks["ok"]:
+                    raise RuntimeError(f"failed its checks: {checks['tune']['problems'] + checks['plan']['problems']}")
+                backing_track(db, step)
+                publish_sample(db, step)
+                entry["result"] = "published"
+                entry["song_id"] = song["id"]
+        except Exception as exc:  # one bad song must not stop the album
+            entry["result"] = f"failed: {exc}"[:300]
+        report.append(entry)
+    return {"album": album, "songs": report}
+
+
 PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
@@ -121,6 +164,7 @@ def ping(db, job: dict) -> dict:
 
 
 HANDLERS = {
+    "load_album": load_album,
     "ping": ping,
     "publish_sample": publish_sample,
     "read_instrument": read_instrument,

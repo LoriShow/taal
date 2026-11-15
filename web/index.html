@@ -39,7 +39,7 @@
       </div>
       <ul class="stats" aria-label="At a glance">
         <li><strong>3</strong> notes to start</li>
-        <li><strong>40</strong> seconds a song</li>
+        <li><strong>9</strong> songs in album one</li>
         <li><strong>1</strong> minute to their first turn</li>
         <li><strong>0</strong> ads</li>
       </ul>
@@ -52,9 +52,10 @@
 
   <section id="play" class="band">
     <div class="wrap">
-      <p class="eyebrow">Song 1 · Level 1</p>
+      <p class="eyebrow" id="song-eyebrow">Song 1 · Level 1</p>
       <h2 id="song-title">Three Little Notes</h2>
       <p class="lead small" id="song-sub">Listen first, then it's your turn. Tap the keys when they light up.</p>
+      <ol id="tracks" class="tracks" aria-label="Album one"></ol>
       <div class="card player" aria-label="Player">
         <div class="controls">
           <button id="playbtn" class="btn primary big" type="button">Play</button>
@@ -63,6 +64,7 @@
           <div id="clock">0:00 / 0:40</div>
         </div>
         <div class="timeline" id="timeline"><div id="head"></div></div>
+        <p id="lyrics" class="lyrics" aria-live="off"></p>
         <div class="roll" id="roll" aria-label="The tune"></div>
         <div class="keys" id="keys"></div>
         <p class="muted" id="score">On a computer, the number keys 1, 2 and 3 play the notes too.</p>
