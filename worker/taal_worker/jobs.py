@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 import pathlib
+import time
+from urllib.parse import urlparse
+
+import httpx
 
 from . import instrument as instrument_mod
 from . import music
@@ -78,7 +82,9 @@ def publish_sample(db, job: dict) -> dict:
     if not song.get("audio_path"):
         raise RuntimeError("the song has no audio yet")
     audio, content_type = db.download(song["audio_path"])
-    path = db.upload(f"samples/{song['id']}/backing.mp3", audio, "audio/mpeg", bucket="taal-public")
+    path = db.upload(
+        f"samples/{song['id']}/backing-{int(time.time())}.mp3", audio, "audio/mpeg", bucket="taal-public"
+    )
     db.update("taal_songs", song["id"], {"is_sample": True, "sample_audio_path": path})
     return {"sample_audio_path": path, "bytes": len(audio)}
 
@@ -88,18 +94,40 @@ CONTENT = pathlib.Path(__file__).parent / "content"
 
 def load_album(db, job: dict) -> dict:
     """Create an album's songs from the bundled content file and take each one all the
-    way to a published sample: check, backing track, publish. Songs already there are skipped."""
+    way to a published sample: check, backing track, publish. Songs already there are
+    skipped, unless payload.replace is true: then they are rewritten and regenerated.
+    payload.tracks, a list of track numbers, limits the job to those tracks."""
     payload = job.get("payload") or {}
     album, family_id = payload.get("album"), payload.get("family_id")
     if not album or not family_id or "/" in album or "." in album:
         raise RuntimeError("this job needs payload.album and payload.family_id")
     songs = json.loads((CONTENT / f"{album}.json").read_text())
+    replace, only = bool(payload.get("replace")), payload.get("tracks")
     report = []
     for item in songs:
+        if only and item["track"] not in only:
+            continue
         entry = {"track": item["track"], "title": item["title"]}
         try:
-            if db.find("taal_songs", album=album, track=item["track"]):
+            existing = db.find("taal_songs", album=album, track=item["track"])
+            if existing and not replace:
                 entry["result"] = "already there"
+            elif existing:
+                song = existing[0]
+                db.update(
+                    "taal_songs",
+                    song["id"],
+                    {"title": item["title"], "level": item["level"], "tune": item["tune"],
+                     "plan": item["plan"], "lyrics": item["lyrics"], "status": "draft", "checks": None},
+                )
+                step = {"id": job["id"], "song_id": song["id"]}
+                checks = check_song(db, step)
+                if not checks["ok"]:
+                    raise RuntimeError(f"failed its checks: {checks['tune']['problems'] + checks['plan']['problems']}")
+                backing_track(db, step)
+                publish_sample(db, step)
+                entry["result"] = "regenerated"
+                entry["song_id"] = song["id"]
             else:
                 song = db.insert(
                     "taal_songs",
@@ -121,6 +149,31 @@ def load_album(db, job: dict) -> dict:
             entry["result"] = f"failed: {exc}"[:300]
         report.append(entry)
     return {"album": album, "songs": report}
+
+
+ASSET_HOSTS = (".higgsfield.ai", ".cloudfront.net")
+ASSET_TYPES = {"image/png", "image/jpeg", "image/webp"}
+
+
+def import_asset(db, job: dict) -> dict:
+    """Copy an image made for Taal (a cover, a theme picture) into the public bucket."""
+    payload = job.get("payload") or {}
+    url, path = payload.get("url", ""), payload.get("path", "")
+    host = urlparse(url).hostname or ""
+    if not url.startswith("https://") or not host.endswith(ASSET_HOSTS):
+        raise RuntimeError("assets can only be imported from Higgsfield")
+    if not path or ".." in path or not path.startswith(("covers/", "themes/")):
+        raise RuntimeError("payload.path must start with covers/ or themes/")
+    r = httpx.get(url, timeout=120.0, follow_redirects=True)
+    if r.status_code >= 400:
+        raise RuntimeError(f"could not fetch the asset: {r.status_code}")
+    content_type = r.headers.get("content-type", "").split(";")[0].strip()
+    if content_type not in ASSET_TYPES:
+        raise RuntimeError(f"unsupported asset type {content_type!r}")
+    if len(r.content) > 15 * 1024 * 1024:
+        raise RuntimeError("the asset is larger than 15 MB")
+    db.upload(path, r.content, content_type, bucket="taal-public")
+    return {"path": path, "bytes": len(r.content), "content_type": content_type}
 
 
 PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
@@ -164,6 +217,7 @@ def ping(db, job: dict) -> dict:
 
 
 HANDLERS = {
+    "import_asset": import_asset,
     "load_album": load_album,
     "ping": ping,
     "publish_sample": publish_sample,

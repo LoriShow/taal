@@ -27,6 +27,7 @@ Job types so far:
 
 | Type | Does |
 |---|---|
+| `import_asset` | Copies an image made on Higgsfield (cover, theme) into the public bucket |
 | `load_album` | Creates an album's songs from `taal_worker/content/<album>.json` and takes each to a published sample |
 | `ping` | Proves the queue works end to end |
 | `read_instrument` | Reads a family's instrument photo with Claude: what it is, its layout, and whether its notes are known |

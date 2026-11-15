@@ -87,6 +87,8 @@
       keys.appendChild(k); keyEls[p] = k;
     });
     P.pitches = pitches;
+    var dots = $("dots"); dots.textContent = ""; P.dotEls = {};
+    pitches.forEach(function (p) { var d = el("i", { "data-n": letter(p) }); dots.appendChild(d); P.dotEls[p] = d; });
 
     if (s.sample_audio_path) {
       P.audio = new Audio(CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + s.sample_audio_path);
@@ -180,7 +182,12 @@
     cells.forEach(function (c, i) { c.classList.toggle("now", i === inTune); });
     var due = {};
     if (!idle) NOTES.forEach(function (n) { if (t >= n.t - 0.05 && t < n.t + BEAT * 0.8) due[n.p] = true; });
-    Object.keys(keyEls).forEach(function (p) { keyEls[p].classList.toggle("due", !!due[p]); });
+    Object.keys(keyEls).forEach(function (p) {
+      keyEls[p].classList.toggle("due", !!due[p]);
+      if (P.dotEls && P.dotEls[p]) P.dotEls[p].classList.toggle("on", !!due[p]);
+    });
+    $("hopper").classList.toggle("hop", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.3);
+    $("stage").classList.toggle("turn", !!cur && cur.kind === "turn");
   }
   function frame() {
     if (!P.playing) return;
@@ -216,6 +223,16 @@
     albumMode = true; $("playall").textContent = "Stop the album";
     start();
   });
+
+  if (CFG.albumCover) {
+    var coverUrl = CFG.supabaseUrl + "/storage/v1/object/public/taal-public/" + CFG.albumCover;
+    var probe = new Image();
+    probe.onload = function () {
+      $("cover").src = coverUrl; $("cover").hidden = false;
+      $("stage").style.backgroundImage = "url(" + coverUrl + ")"; $("stage").classList.add("has-cover");
+    };
+    probe.src = coverUrl;
+  }
 
   setupSong(CFG.fallbackSong);
   if (sb) {
