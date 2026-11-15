@@ -211,6 +211,36 @@ def read_instrument(db, job: dict) -> dict:
     return result
 
 
+def render_video(db, job: dict) -> dict:
+    """Make the YouTube play-along video for a sample song and put it in the public bucket."""
+    import tempfile
+
+    from . import video
+
+    song = _song(db, job)
+    if not song.get("sample_audio_path"):
+        raise RuntimeError("the song has no public backing track yet")
+    payload = job.get("payload") or {}
+    with tempfile.TemporaryDirectory() as tmp:
+        backing = f"{tmp}/backing.mp3"
+        r = db.http.get(f"{db.url}/storage/v1/object/public/taal-public/{song['sample_audio_path']}")
+        if r.status_code >= 400:
+            raise RuntimeError(f"could not fetch the backing track: {r.status_code}")
+        with open(backing, "wb") as f:
+            f.write(r.content)
+        out = f"{tmp}/video.mp4"
+        started = time.time()
+        info = video.render(song, backing, out)
+        with open(out, "rb") as f:
+            data = f.read()
+    name = payload.get("path") or (
+        f"videos/{song.get('album') or 'songs'}/track{int(song.get('track') or 0):02d}-{int(time.time())}.mp4"
+    )
+    path = db.upload(name, data, "video/mp4", bucket="taal-public")
+    return {"path": path, "bytes": len(data), "seconds": info["seconds"],
+            "render_seconds": round(time.time() - started, 1)}
+
+
 def ping(db, job: dict) -> dict:
     """Proves the queue works end to end."""
     return {"pong": True, "echo": job.get("payload") or {}}
@@ -220,6 +250,7 @@ HANDLERS = {
     "import_asset": import_asset,
     "load_album": load_album,
     "ping": ping,
+    "render_video": render_video,
     "publish_sample": publish_sample,
     "read_instrument": read_instrument,
     "check_song": check_song,
