@@ -46,6 +46,7 @@ def run_one(db: Db) -> bool:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per poll is noise
     missing = [name for name in NEEDED if not os.environ.get(name)]
     if missing:
         # Stay up and say what is missing, so the deploy does not crash-loop.

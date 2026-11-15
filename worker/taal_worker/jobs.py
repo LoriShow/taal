@@ -62,7 +62,13 @@ def backing_track(db, job: dict) -> dict:
     return {"audio_path": path, "elevenlabs_song_id": eleven_id, "bytes": len(audio)}
 
 
+def ping(db, job: dict) -> dict:
+    """Proves the queue works end to end."""
+    return {"pong": True, "echo": job.get("payload") or {}}
+
+
 HANDLERS = {
+    "ping": ping,
     "check_song": check_song,
     "backing_track": backing_track,
 }

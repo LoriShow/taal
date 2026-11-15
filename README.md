@@ -27,6 +27,7 @@ Job types so far:
 
 | Type | Does |
 |---|---|
+| `ping` | Proves the queue works end to end |
 | `check_song` | Runs the tune and plan rules on a draft song; marks it `checked` |
 | `backing_track` | Generates the backing track with ElevenLabs Music and stores it |
 
