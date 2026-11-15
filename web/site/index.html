@@ -21,6 +21,7 @@
   </a>
   <nav aria-label="Main">
     <a href="#play">Play</a>
+    <a href="#series">Albums</a>
     <a href="#how">How it works</a>
     <a href="#instrument">Your instrument</a>
     <a href="#studio">Studio</a>
@@ -39,9 +40,9 @@
         <a class="btn" href="#family">Start your family's song</a>
       </div>
       <ul class="stats" aria-label="At a glance">
-        <li><strong>3</strong> notes to start</li>
-        <li><strong>9</strong> songs in album one</li>
-        <li><strong>1</strong> minute to their first turn</li>
+        <li><strong>9</strong> albums</li>
+        <li><strong>81</strong> songs to play</li>
+        <li><strong>5</strong> instruments on screen</li>
         <li><strong>0</strong> ads</li>
       </ul>
     </div>
@@ -133,6 +134,15 @@
     </div>
   </section>
 
+  <section id="series" hidden>
+    <div class="wrap">
+      <p class="eyebrow">Taal Series One</p>
+      <h2>Nine albums, one small step at a time.</h2>
+      <p class="lead small">Start with three notes and climb to all eight. Along the way: rhythm, the seasons, festival songs, Hindi songs, a part for a grown-up, and songs your child makes up. A new level opens after three songs with two stars.</p>
+      <ol class="series" id="serieslist"></ol>
+    </div>
+  </section>
+
   <section id="how">
     <div class="wrap">
       <p class="eyebrow">How Taal teaches</p>
@@ -146,7 +156,7 @@
       <div class="why">
         <div><h3>Doing beats watching</h3><p>Studies of young children find the benefits of music come from making it, not from listening to it. So every Taal song hands over the turn.</p></div>
         <div><h3>Small voices, small steps</h3><p>Children of three to five sing comfortably across about six notes. Level 1 uses the lowest three.</p></div>
-        <div><h3>Better with you</h3><p>Children keep playing when a parent plays too. Taal gives you a part, not a seat in the audience.</p></div>
+        <div><h3>Better with you</h3><p>Children keep playing when a parent plays too. Album eight gives you a part of your own: one low note on the beat while your child plays the tune.</p></div>
       </div>
     </div>
   </section>
@@ -155,14 +165,15 @@
     <div class="wrap two">
       <div>
         <p class="eyebrow">Your instrument</p>
-        <h2>Send a photo of whatever you have at home.</h2>
-        <p class="lead small">A rainbow xylophone, a small keyboard, a ukulele, or two steel pots and a spoon. Taal reads the photo and builds the lesson around it: the same bars, the same colours, in the same order.</p>
-        <a class="btn primary" href="#family">Add your instrument</a>
+        <h2>Play on the instrument you already have.</h2>
+        <p class="lead small">Pick yours under the player and the screen turns into it, showing exactly which key, bar or string to play next. No instrument yet? The big screen keys work on any phone or computer.</p>
+        <a class="btn primary" href="#play">Choose your instrument</a>
       </div>
       <ul class="kinds">
-        <li><span class="chip" style="--c:var(--note-c)"></span><div><strong>Keyboard or piano</strong><br>Ready from the photo.</div></li>
-        <li><span class="chip" style="--c:var(--note-d)"></span><div><strong>Xylophone, ukulele, toys</strong><br>We also check how each note really sounds. Coming soon.</div></li>
-        <li><span class="chip" style="--c:var(--note-e)"></span><div><strong>Drums, shakers, pots</strong><br>Perfect for the first level: finding the beat.</div></li>
+        <li><span class="chip" style="--c:var(--note-c)"></span><div><strong>Piano or keyboard</strong><br>Starts at middle C, with a finger number on every key.</div></li>
+        <li><span class="chip" style="--c:var(--note-d)"></span><div><strong>Xylophone</strong><br>The bar with the same letter lights up, counted from the longest.</div></li>
+        <li><span class="chip" style="--c:var(--note-e)"></span><div><strong>Ukulele</strong><br>Which string to pluck, and which fret to press first.</div></li>
+        <li><span class="chip" style="--c:var(--note-g, var(--accent))"></span><div><strong>Lyre</strong><br>The string to pluck glows, numbered from the longest. The music shifts to match your strings.</div></li>
       </ul>
     </div>
   </section>

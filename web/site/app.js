@@ -590,6 +590,7 @@
           t.addEventListener("click", function () { showAlbum(a.id, true); });
           tabs.appendChild(t);
         });
+        drawSeries(albums);
         var saved = null; try { saved = localStorage.getItem("taal-album"); } catch (e) {}
         showAlbum(albums.some(function (a) { return a.id === saved; }) ? saved : albums[0].id, false);
         try { window.dispatchEvent(new CustomEvent("taal:album", { detail: all })); } catch (e) {}
@@ -597,6 +598,30 @@
   }
 
   var ALL_SONGS = [], ALBUM_ID = null;
+
+  // The "Series One" list on the home page: one card per album that has songs. A card opens that album in the player.
+  function drawSeries(albums) {
+    var ol = $("serieslist"); if (!ol) return;
+    ol.textContent = "";
+    albums.forEach(function (a, i) {
+      if (!a.id) return;
+      var count = ALL_SONGS.filter(function (x) { return x.album === a.id; }).length;
+      var what = (a.tab || "").split("·")[1];
+      var b = el("button", { type: "button" });
+      b.appendChild(el("span", { "class": "n" }, String(i + 1)));
+      var t = el("div", {});
+      t.appendChild(el("b", {}, a.title));
+      t.appendChild(el("small", {}, (what ? what.trim() + " · " : "") + count + " songs"));
+      t.appendChild(el("p", {}, a.blurb || ""));
+      b.appendChild(t);
+      b.addEventListener("click", function () {
+        showAlbum(a.id, true);
+        var p = $("play"); if (p) p.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      var li = el("li"); li.appendChild(b); ol.appendChild(li);
+    });
+    $("series").hidden = !ol.children.length;
+  }
   function showAlbum(id, chosen) {
     ALBUM_ID = id;
     try { if (id) localStorage.setItem("taal-album", id); } catch (e) {}
