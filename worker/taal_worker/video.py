@@ -256,7 +256,7 @@ class Painter:
         return im
 
 
-def render(song: dict, backing: str | None, out_path: str, site: str = "taal-kids.netlify.app",
+def render(song: dict, backing: str | None, out_path: str, site: str = "playtaal.net",
            fps: int = 30, intro: float = 5.0, outro: float = 5.0, limit: float | None = None) -> dict:
     s = Song(song)
     p = Painter(s, site)
@@ -297,7 +297,7 @@ def render(song: dict, backing: str | None, out_path: str, site: str = "taal-kid
     return {"seconds": round(total, 2), "frames": frames}
 
 
-def still(song: dict, t: float, out_png: str, site: str = "taal-kids.netlify.app", intro: float = 5.0) -> None:
+def still(song: dict, t: float, out_png: str, site: str = "playtaal.net", intro: float = 5.0) -> None:
     """One frame, for checking the look. t is seconds from the start of the video."""
     s = Song(song)
     p = Painter(s, site)
