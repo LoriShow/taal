@@ -36,10 +36,21 @@
     myPlays().forEach(function (p) { if (p.song_id) b[p.song_id] = Math.max(b[p.song_id] || 0, p.stars); });
     return b;
   }
-  // Level 2 opens after three level-1 album songs with two stars or more.
+  // Each level opens after three songs of the level below have two stars or more.
+  // Levels nobody has songs for yet are skipped over, so a gap never blocks a child.
+  var LEVEL_NAMES = { 2: "five notes", 3: "rhythm songs", 4: "six notes", 5: "the whole ladder, C to high C" };
   function unlocked(b) {
-    var good = album.filter(function (s) { return (s.level || 1) === 1 && (b[s.id] || 0) >= 2; }).length;
-    return good >= 3 ? 2 : 1;
+    var top = album.reduce(function (m, s) { return Math.max(m, s.level || 1); }, 1);
+    var lvl = 1;
+    while (lvl < top) {
+      var here = album.filter(function (s) { return (s.level || 1) === lvl; });
+      if (here.length) {
+        var good = here.filter(function (s) { return (b[s.id] || 0) >= 2; }).length;
+        if (good < Math.min(3, here.length)) break;
+      }
+      lvl++;
+    }
+    return lvl;
   }
 
   /* ---------- drawing ---------- */
@@ -152,8 +163,9 @@
     sb.from("taal_plays").insert(row).select("child_id,song_id,stars,seconds,created_at").then(function (r) {
       if (r.error) { box.appendChild(el("p", { "class": "muted" }, "Couldn't save the stars this time.")); return; }
       plays.unshift(r.data[0]);
-      if (unlocked(best()) > before) {
-        box.appendChild(el("div", { "class": "levelup" }, k.name + " is ready for 5 notes! Songs with five notes are open now."));
+      var after = unlocked(best());
+      if (after > before) {
+        box.appendChild(el("div", { "class": "levelup" }, k.name + " reached level " + after + "! Songs with " + (LEVEL_NAMES[after] || "new notes") + " are open now."));
       }
       drawAll();
     });

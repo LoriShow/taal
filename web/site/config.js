@@ -12,7 +12,16 @@ window.TAAL = {
       alt: "Album cover: a little drum and friends greeting the morning sun" },
     { id: "album3", eyebrow: "Album three", title: "Animal Parade", tab: "Album three · rhythm",
       blurb: "Nine animal songs on the same five notes, with long notes, short notes and rests.", cover: "covers/album3-v1",
-      alt: "Album cover: a little drum leading a parade of paper animals" }
+      alt: "Album cover: a little drum leading a parade of paper animals" },
+    { id: "album4", eyebrow: "Album four", title: "Six Notes, Four Seasons", tab: "Album four · 6 notes",
+      blurb: "Nine songs through spring, summer, monsoon and winter. F joins the band: six notes now.", cover: "covers/album4-v1",
+      alt: "Album cover: a little drum under a tree that is half spring blossom, half winter snow" },
+    { id: "album5", eyebrow: "Album five", title: "The Whole Ladder", tab: "Album five · C to C",
+      blurb: "Nine songs that climb all eight steps, from low C to high C.", cover: "covers/album5-v1",
+      alt: "Album cover: a little drum climbing a paper ladder up to the stars" },
+    { id: "album6", eyebrow: "Album six", title: "Sa Re Ga Pa", tab: "Album six · festivals",
+      blurb: "Nine festival songs on five notes, sung with their Indian names: Sa, Re, Ga, Pa, Dha.", cover: "covers/album6-v1",
+      alt: "Album cover: a little drum with diyas, kites and rangoli for a festival" }
   ],
   // The stage: an animated backdrop, and characters the page moves on the beat.
   theme: {

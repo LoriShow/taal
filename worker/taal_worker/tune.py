@@ -26,10 +26,12 @@ LEVELS = {
     2: {"pitches": ["C4", "D4", "E4", "G4", "A4"], "max_leap": 7},
     3: {"pitches": ["C4", "D4", "E4", "G4", "A4"], "max_leap": 7},
     4: {"pitches": ["C4", "D4", "E4", "F4", "G4", "A4"], "max_leap": 9},
+    # All eight notes, C to C: for the instrument; the top two sit just above easy singing.
+    5: {"pitches": ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"], "max_leap": 9, "high": "C5"},
 }
 
 # With a family's own instrument, a level limits how many different notes are used.
-LEVEL_NOTE_COUNT = {1: 3, 2: 5, 3: 5, 4: 6}
+LEVEL_NOTE_COUNT = {1: 3, 2: 5, 3: 5, 4: 6, 5: 8}
 
 RANGE_LOW = "C4"
 RANGE_HIGH = "A4"
@@ -117,7 +119,8 @@ def check_tune(tune: dict, level: int = 1, instrument_notes: list[str] | None = 
     if not notes:
         return {"ok": False, "problems": ["the tune has no notes"]}
 
-    low, high = midi(RANGE_LOW), midi(RANGE_HIGH)
+    top = rules.get("high", RANGE_HIGH)
+    low, high = midi(RANGE_LOW), midi(top)
     on_instrument = bool(instrument_notes)
     allowed = {midi(p) for p in (instrument_notes if on_instrument else rules["pitches"])}
 
@@ -127,7 +130,7 @@ def check_tune(tune: dict, level: int = 1, instrument_notes: list[str] | None = 
             if m not in allowed:
                 problems.append(f"{n['pitch']} at beat {n['start']} is not on this instrument")
         elif not low <= m <= high:
-            problems.append(f"{n['pitch']} at beat {n['start']} is outside {RANGE_LOW}-{RANGE_HIGH}")
+            problems.append(f"{n['pitch']} at beat {n['start']} is outside {RANGE_LOW}-{top}")
         elif m not in allowed:
             problems.append(f"{n['pitch']} at beat {n['start']} is not a level {level} note")
         if n["length"] <= 0:

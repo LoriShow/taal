@@ -147,7 +147,11 @@
     var useXylo = MODE === "xylo" && pitches.every(function (p) { return XYLO.indexOf(midi(p)) >= 0; });
     var useUke = MODE === "uke" && pitches.every(function (p) { return !!ukeSpot(midi(p)); });
     ACTIVE = useLyre ? "lyre" : usePiano ? "piano" : useXylo ? "xylo" : useUke ? "uke" : "keys";
-    $("lyrenofit").hidden = !(MODE !== "keys" && ACTIVE === "keys");
+    var nofit = $("lyrenofit");
+    nofit.hidden = !(MODE !== "keys" && ACTIVE === "keys");
+    nofit.textContent = MODE === "lyre"
+      ? "Your lyre can't play this one: its strings skip the half steps (like E to F, or B to C) that this song uses. Piano or xylophone can, or play it on the screen keys."
+      : "This song needs a note your instrument doesn't have here, so it plays on the screen keys.";
     keys.hidden = ACTIVE !== "keys"; lyre.hidden = !useLyre; piano.hidden = !usePiano; xylo.hidden = !useXylo; uke.hidden = !useUke;
     Array.prototype.forEach.call(document.querySelectorAll("#howto [data-for]"), function (d) {
       d.hidden = d.getAttribute("data-for") !== ACTIVE;
