@@ -241,6 +241,33 @@ def render_video(db, job: dict) -> dict:
             "render_seconds": round(time.time() - started, 1)}
 
 
+def _stamp() -> str:
+    import datetime as dt
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def write_song(db, job: dict) -> dict:
+    """Taal Studio: write a song draft from a parent's brief (words and tune, no music yet)."""
+    from . import writer
+
+    draft_id = (job.get("payload") or {}).get("draft_id")
+    if not draft_id:
+        raise RuntimeError("this job needs payload.draft_id")
+    draft = db.get("taal_studio_drafts", draft_id)
+    if draft is None:
+        raise RuntimeError(f"draft {draft_id} not found")
+    db.update("taal_studio_drafts", draft_id, {"status": "writing", "updated_at": _stamp()})
+    try:
+        song = writer.write(draft["brief"])
+    except Exception as exc:
+        db.update("taal_studio_drafts", draft_id,
+                  {"status": "failed", "error": str(exc)[:500], "updated_at": _stamp()})
+        raise
+    db.update("taal_studio_drafts", draft_id, {"status": "ready", "draft": song, "error": None, "updated_at": _stamp()})
+    return {"draft_id": draft_id, "title": song["title"], "attempts": song["attempts"],
+            "playability": song["checks"]["tune"]["playability"]}
+
+
 def ping(db, job: dict) -> dict:
     """Proves the queue works end to end."""
     return {"pong": True, "echo": job.get("payload") or {}}
@@ -251,6 +278,7 @@ HANDLERS = {
     "load_album": load_album,
     "ping": ping,
     "render_video": render_video,
+    "write_song": write_song,
     "publish_sample": publish_sample,
     "read_instrument": read_instrument,
     "check_song": check_song,

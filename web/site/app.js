@@ -129,7 +129,7 @@
       });
     } else {
       P.audio = null;
-      $("audiostate").textContent = "This song has no backing track yet: you'll hear a click on each beat and the notes.";
+      $("audiostate").textContent = s.draft ? "Studio draft: a bell for the tune and a click on each beat. Real music comes when you make it." : "This song has no backing track yet: you'll hear a click on each beat and the notes.";
     }
     draw(0, true);
   }
@@ -390,6 +390,10 @@
     var i = parseInt(e.key, 10);
     if (i >= 1 && P.pitches && P.pitches[i - 1]) tap(P.pitches[i - 1]);
   });
+  // Taal Studio loads drafts into this same player.
+  window.TaalPlayer = {
+    load: function (s) { if (P.playing) { albumMode = false; stop(false); } setupSong(s); }
+  };
   $("playbtn").addEventListener("click", function () {
     if (P.playing) { albumMode = false; stop(false); } else start();
   });

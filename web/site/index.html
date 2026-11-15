@@ -23,6 +23,7 @@
     <a href="#play">Play</a>
     <a href="#how">How it works</a>
     <a href="#instrument">Your instrument</a>
+    <a href="#studio">Studio</a>
     <a class="cta" href="#family">Your family</a>
   </nav>
 </header>
@@ -149,6 +150,63 @@
     </div>
   </section>
 
+  <section id="studio" class="band">
+    <div class="wrap">
+      <p class="eyebrow">Taal Studio · early test</p>
+      <h2>Make a song about your child's world</h2>
+      <p class="lead small">Tell us what it's about. Taal writes the words and a tune your child can play, and you hear a draft straight away. Real music comes next.</p>
+
+      <div id="studio-locked" class="card">
+        <p>Studio is open to our first families while we test it. Enter your studio code.</p>
+        <form id="studio-code-form" class="row">
+          <label class="grow" for="studio-code">Studio code<input id="studio-code" required autocomplete="off" spellcheck="false" placeholder="taal-xxxx-xxxx-xxxx"></label>
+          <button class="btn primary" type="submit">Open Studio</button>
+        </form>
+      </div>
+
+      <div id="studio-open" hidden>
+        <form id="studio-form" class="card">
+          <label for="st-about">What's the song about?
+            <textarea id="st-about" required maxlength="200" rows="2" placeholder="Our dog Bruno, who loves the park"></textarea>
+          </label>
+          <label for="st-name">Child's name, if you'd like it in the song<input id="st-name" maxlength="30" placeholder="Optional"></label>
+          <fieldset class="chips">
+            <legend>Mood</legend>
+            <label><input type="radio" name="st-mood" value="calm"> Calm</label>
+            <label><input type="radio" name="st-mood" value="bouncy" checked> Bouncy</label>
+            <label><input type="radio" name="st-mood" value="silly"> Silly</label>
+            <label><input type="radio" name="st-mood" value="sleepy"> Sleepy</label>
+            <label><input type="radio" name="st-mood" value="brave"> Brave</label>
+          </fieldset>
+          <fieldset class="chips">
+            <legend>Notes to play</legend>
+            <label><input type="radio" name="st-level" value="1" checked> 3 notes (just starting)</label>
+            <label><input type="radio" name="st-level" value="2"> 5 notes</label>
+          </fieldset>
+          <div class="row">
+            <button id="st-write" class="btn primary" type="submit">Write my song</button>
+            <p class="muted" id="st-status" role="status"></p>
+          </div>
+        </form>
+
+        <div id="st-draft" class="card" hidden>
+          <p class="eyebrow">Your draft</p>
+          <h3 id="st-title"></h3>
+          <div class="st-words">
+            <div><b>Listen</b><textarea id="st-listen" rows="4"></textarea></div>
+            <div><b>Together</b><textarea id="st-together" rows="4"></textarea></div>
+          </div>
+          <div class="roll" id="st-roll" aria-label="The tune"></div>
+          <div class="row">
+            <button id="st-hear" class="btn primary" type="button">Hear it in the player</button>
+            <button id="st-again" class="btn" type="button">Try another tune</button>
+          </div>
+          <p class="muted">You can change the words above; the player uses them when you press "Hear it". This draft plays with a simple bell and a beat click. Making it with real music is the next step.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="family">
     <div class="wrap">
       <p class="eyebrow">Your family</p>
@@ -237,5 +295,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="studio.js"></script>
 </body>
 </html>

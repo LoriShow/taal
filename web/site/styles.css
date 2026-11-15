@@ -275,3 +275,14 @@ footer .wrap { flex-direction: row; }
 .udot.down { transform: scale(.94); }
 .ufretnums span { font-size: .75rem; font-weight: 700; color: #6b5a3c; text-align: center; padding-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .xbar.due, .xbar.down, .udot.due, .udot.down { transform: none; } }
+
+/* Taal Studio */
+textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px solid var(--line); border-radius: 10px; padding: 9px 12px; width: 100%; min-width: 0; resize: vertical; }
+.chips { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips legend { font-weight: 700; font-size: .9rem; margin-bottom: 6px; padding: 0; }
+.chips label { flex-direction: row; align-items: center; gap: 6px; font-weight: 700; background: var(--bg); border: 2px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.chips label:has(input:checked) { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.chips input { accent-color: var(--accent); }
+.st-words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.st-words b { display: block; font-size: .9rem; margin-bottom: 4px; }
+@media (max-width: 640px) { .st-words { grid-template-columns: 1fr; } }

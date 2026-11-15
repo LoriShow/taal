@@ -188,3 +188,30 @@ def test_bad_model_output_is_tidied():
     assert out["profile"]["kind"] == "other" and out["profile"]["layout"] == "row"
     assert out["profile"]["confidence"] == 1.0
     assert [p["note_guess"] for p in out["profile"]["parts"]] == [None, "C4"]
+
+
+def test_studio_draft_assembles_and_passes():
+    from taal_worker import writer
+    brief = writer.brief_from({"about": "our dog Bruno", "mood": "bouncy", "level": 1})
+    raw = {
+        "title": "Bruno Runs", "bpm": 104,
+        "notes": [{"pitch": p, "beat": b} for p, b in [
+            ("C4", 0), ("D4", 1), ("E4", 2), ("E4", 4), ("D4", 5), ("C4", 6),
+            ("C4", 8), ("D4", 9), ("E4", 10), ("D4", 12), ("D4", 13), ("C4", 14)]],
+        "listen_lines": ["Bruno runs", "Bruno jumps", "Bruno runs", "In the park"],
+        "together_lines": ["Run run run"] * 4,
+        "styles": ["bouncy ukulele", "light shaker"],
+    }
+    song = writer.assemble(raw, brief)
+    assert song["problems"] == [], song["problems"]
+    assert any(s["kind"] == "turn" for s in song["plan"]["sections"])
+
+
+def test_studio_draft_rejects_wrong_notes():
+    from taal_worker import writer
+    brief = writer.brief_from({"about": "x", "level": 1})
+    raw = {"title": "x", "bpm": 100,
+           "notes": [{"pitch": "G4", "beat": b} for b in range(0, 12)],
+           "listen_lines": ["a"], "together_lines": ["b"], "styles": ["piano", "shaker"]}
+    song = writer.assemble(raw, brief)
+    assert song["problems"]
