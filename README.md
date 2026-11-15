@@ -7,7 +7,7 @@ with animated films that teach the child and parents to play together.
 
 - `worker/` — Python job runner (Railway service `taal-worker`, root directory `/worker`).
 - `supabase/migrations/` — database schema (Supabase project `taal`).
-- `web/` — the site: static HTML, CSS and JS served by nginx (Railway service `taal-web`, root directory `/web`). Home page, song player, and the family area (sign-in, links, instrument photos). `config.js` holds public values only.
+- `web/site/` — the site: static HTML, CSS and JS. Served two ways: by Netlify (project `taal-kids`, settings in `netlify.toml`) and by nginx on Railway (service `taal-web`, root directory `/web`). Home page, song player, and the family area (sign-in, links, instrument photos). `config.js` holds public values only.
 
 ## Rules that shape the code
 
