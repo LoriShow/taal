@@ -29,7 +29,8 @@ CHUNK_MAX_MS = 120000
 MAX_LINES = 30
 MAX_LINE_CHARS = 200
 
-KINDS = {"listen", "turn"}
+# listen: the music leads. turn: the child plays the tune. free: the child makes up their own tune.
+KINDS = {"listen", "turn", "free"}
 
 
 def section_ms(bars: int, bpm: float, beats_per_bar: int = 4) -> int:
@@ -111,6 +112,9 @@ def to_elevenlabs(plan: dict) -> dict:
         if s.get("kind") == "turn":
             # Leave room: the child fills the tune in these bars.
             styles.append("sparse accompaniment with space for a lead melody")
+        elif s.get("kind") == "free":
+            # The child makes up their own tune: simple steady chords, nothing to follow.
+            styles.append("simple steady chords with open space for a child to make up a melody")
         chunk = {
             "text": text,
             "duration_ms": section_ms(s["bars"], bpm, plan.get("beats_per_bar", 4)),

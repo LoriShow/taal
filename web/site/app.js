@@ -63,6 +63,8 @@
     return null;
   }
   var ALBUM = [], albumMode = false;
+  // PARENT: the grown-up's beats (album eight). FREE: notes the child made up in a "free" section (album nine).
+  var PARENT = [], PARENT_PITCH = null;
   var song = null, SECTIONS = [], NOTES = [], TOTAL = 0, BEAT = 0, PER_BAR = 4, tuneBeats = 16, keyEls = {}, cells = [];
 
   function setupSong(s) {
@@ -76,14 +78,31 @@
     s.plan.sections.forEach(function (sec, si) {
       var o = { name: sec.name, bars: sec.bars, kind: sec.kind || "listen", start: bar * PER_BAR * BEAT, lines: sec.lines || [] };
       bar += sec.bars; o.end = bar * PER_BAR * BEAT;
-      o.tune = sec.bars * PER_BAR >= tuneBeats;
-      o.say = o.kind === "turn" ? "Your turn!" : (o.tune ? (/together/i.test(o.name) ? "Play together" : "Listen and watch") : "Listen");
+      o.tune = o.kind !== "free" && sec.bars * PER_BAR >= tuneBeats;
+      o.say = o.kind === "turn" ? "Your turn!" : o.kind === "free" ? "Make it up!" : (o.tune ? (/together/i.test(o.name) ? "Play together" : "Listen and watch") : "Listen");
       SECTIONS.push(o);
       if (o.tune) s.tune.notes.forEach(function (n) {
         NOTES.push({ p: n.pitch, t: o.start + n.start * BEAT, turn: o.kind === "turn", hit: false });
       });
     });
     TOTAL = bar * PER_BAR * BEAT;
+
+    // A grown-up part: one low note on the same beats of every bar, in the turns and the together parts.
+    PARENT = []; PARENT_PITCH = null;
+    var pp = s.tune.parent;
+    if (pp && pp.pitch) {
+      PARENT_PITCH = pp.pitch;
+      var pbeats = pp.beats && pp.beats.length ? pp.beats : [0];
+      SECTIONS.forEach(function (o) {
+        if (!o.tune || !(o.kind === "turn" || /together/i.test(o.name))) return;
+        for (var b = 0; b < o.bars; b++) pbeats.forEach(function (k) { PARENT.push({ t: o.start + (b * PER_BAR + k) * BEAT, hit: false }); });
+      });
+      $("parentnote").textContent = "low " + letter(pp.pitch);
+      $("parenthow").textContent = "Tap on " + (pbeats.length === 1 && pbeats[0] === 0 ? "the first beat of each bar"
+        : "beats " + pbeats.map(function (k) { return k + 1; }).join(" and ")) + ", or play a low " + letter(pp.pitch) + " on your own instrument. Space bar works too.";
+    }
+    $("parentpad").hidden = !PARENT.length;
+    $("mytune").hidden = true;
 
     $("song-title").textContent = s.title || "A Taal song";
     $("song-eyebrow").textContent = (s.track ? "Song " + s.track + " · " : "") + "Level " + (s.level || 1);
@@ -93,7 +112,7 @@
     var timeline = $("timeline"), head = $("head");
     Array.prototype.slice.call(timeline.querySelectorAll(".sec")).forEach(function (n) { n.remove(); });
     SECTIONS.forEach(function (o) {
-      var d = el("div", { "class": "sec" + (o.kind === "turn" ? " turn" : "") });
+      var d = el("div", { "class": "sec" + (o.kind === "turn" ? " turn" : o.kind === "free" ? " turn free" : "") });
       d.style.setProperty("--bars", o.bars);
       d.appendChild(document.createTextNode(o.name));
       d.appendChild(el("small", {}, o.bars + " bars"));
@@ -306,6 +325,8 @@
   function start() {
     if (!ensureCtx()) { $("score").textContent = "This browser cannot play sound here."; return; }
     NOTES.forEach(function (n) { n.hit = false; });
+    PARENT.forEach(function (n) { n.hit = false; });
+    P.free = []; $("mytune").hidden = true;
     filmHide();
     P.gain = P.ctx.createGain(); P.gain.connect(P.ctx.destination);
     P.startCtx = P.ctx.currentTime + (P.audio ? 0 : 0.12);
@@ -329,12 +350,16 @@
     if (finished) {
       var turn = NOTES.filter(function (n) { return n.turn; });
       var got = turn.filter(function (n) { return n.hit; }).length;
+      var pgot = PARENT.filter(function (n) { return n.hit; }).length;
       $("score").textContent = "You caught " + got + " of " + turn.length + (FIT ? " strings in your turn. " : " notes in your turn. ") +
-        (got >= turn.length * 0.75 ? "Lovely playing!" : "Play again and tap as each key lights up.");
+        (got >= turn.length * 0.75 ? "Lovely playing!" : "Play again and tap as each key lights up.") +
+        (PARENT.length ? " The grown-up kept the beat " + pgot + " of " + PARENT.length + " times." : "");
+      showMyTune();
       // Progress (progress.js) listens for this to give stars and save the play.
       try {
         window.dispatchEvent(new CustomEvent("taal:finished", { detail: {
-          song: song, turn: turn.length, hits: got, seconds: Math.round(TOTAL / P.rate), instrument: ACTIVE
+          song: song, turn: turn.length, hits: got, seconds: Math.round(TOTAL / P.rate), instrument: ACTIVE,
+          parent_beats: PARENT.length, parent_hits: pgot, made_up: (P.free || []).length
         } }));
       } catch (e) {}
     }
@@ -353,8 +378,10 @@
     var cur = null;
     SECTIONS.forEach(function (s) { var on = !idle && t >= s.start && t < s.end; s.el.classList.toggle("active", on); if (on) cur = s; });
     $("now").textContent = idle ? "Ready" : (cur ? cur.say : "");
-    $("now").classList.toggle("turn", !!cur && cur.kind === "turn");
-    var words = idle || !cur ? "" : (cur.kind === "turn" ? WORDS[ACTIVE][1] : cur.lines.join("\n"));
+    var turnish = !!cur && (cur.kind === "turn" || cur.kind === "free");
+    $("now").classList.toggle("turn", turnish);
+    var words = idle || !cur ? "" : (cur.kind === "turn" ? WORDS[ACTIVE][1]
+      : cur.kind === "free" ? "Play any notes you like, your own way. There's no wrong note!" : cur.lines.join("\n"));
     if ($("lyrics").textContent !== words) $("lyrics").textContent = words;
     $("beat").classList.toggle("on", !idle && (t / BEAT - Math.floor(t / BEAT)) < 0.25);
     var inTune = cur && cur.tune ? Math.floor((t - cur.start) / BEAT) : -1;
@@ -374,7 +401,8 @@
       f.classList.toggle("play", playing);
       f.classList.toggle("hop", onBeat && !playing);
     });
-    $("stage").classList.toggle("turn", !!cur && cur.kind === "turn");
+    $("stage").classList.toggle("turn", turnish);
+    if (PARENT.length) $("parentpad").classList.toggle("due", !idle && PARENT.some(function (n) { return t >= n.t - 0.05 && t < n.t + BEAT * 0.6; }));
   }
   function frame() {
     if (!P.playing) return;
@@ -390,13 +418,49 @@
     pluck(k);
     if (!P.playing) return;
     var t = now();
+    var cur = SECTIONS.filter(function (o) { return t >= o.start && t < o.end; })[0];
+    if (cur && cur.kind === "free") { (P.free = P.free || []).push({ p: p, t: t }); return; }
     for (var i = 0; i < NOTES.length; i++) {
       var n = NOTES[i];
       if (n.turn && !n.hit && n.p === p && Math.abs(t - n.t) < 0.3) { n.hit = true; break; }
     }
   }
+  function parentTap() {
+    if (!PARENT_PITCH) return;
+    ensureCtx();
+    if (P.ctx) tone(PARENT_PITCH, P.ctx.currentTime, null, 0.7);
+    pluck($("parentpad"));
+    if (!P.playing) return;
+    var t = now();
+    for (var i = 0; i < PARENT.length; i++) {
+      if (!PARENT[i].hit && Math.abs(t - PARENT[i].t) < 0.3) { PARENT[i].hit = true; break; }
+    }
+  }
+  $("parentpad").addEventListener("click", parentTap);
+
+  // After a song with a make-it-up part: show the child's own tune and let them hear it back.
+  function showMyTune() {
+    var f = P.free || [], box = $("mytune");
+    if (!f.length) { box.hidden = true; return; }
+    $("mytune-text").textContent = "You made up a tune of " + f.length + (f.length === 1 ? " note: " : " notes: ") +
+      f.slice(0, 24).map(function (n) { return letter(n.p); }).join(" ") + (f.length > 24 ? " …" : "");
+    box.hidden = false;
+    try {
+      var saved = JSON.parse(localStorage.getItem("taal-my-tunes") || "[]");
+      saved.unshift({ song: song && song.title, at: new Date().toISOString(),
+        notes: f.map(function (n) { return [n.p, Math.round((n.t - f[0].t) * 100) / 100]; }) });
+      localStorage.setItem("taal-my-tunes", JSON.stringify(saved.slice(0, 10)));
+    } catch (e) {}
+  }
+  $("mytune-play").addEventListener("click", function () {
+    var f = P.free || []; if (!f.length || !ensureCtx()) return;
+    var at = P.ctx.currentTime + 0.1;
+    f.forEach(function (n) { tone(n.p, at + (n.t - f[0].t) / P.rate, null, 0.55); });
+  });
+
   document.addEventListener("keydown", function (e) {
     if (e.repeat || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === " " && PARENT_PITCH && e.target.tagName !== "BUTTON") { e.preventDefault(); parentTap(); return; }
     var i = parseInt(e.key, 10);
     if (i >= 1 && P.pitches && P.pitches[i - 1]) tap(P.pitches[i - 1]);
   });

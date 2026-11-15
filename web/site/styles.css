@@ -312,3 +312,18 @@ textarea { font: inherit; color: var(--ink); background: var(--bg); border: 2px 
 .kids .week { color: var(--muted); font-size: .95rem; }
 
 .albumtabs { margin-bottom: 14px; }
+
+/* Album eight: the grown-up's note. Album nine: the child's own tune. */
+.sec.free { border-style: dashed; }
+.parentpad { display: grid; justify-items: center; gap: 4px; width: 100%; max-width: 360px; margin: 16px auto 0;
+  padding: 16px 20px; border-radius: 28px; border: 3px solid var(--accent); background: var(--surface);
+  color: var(--ink); font: inherit; cursor: pointer; transition: transform .08s; }
+.parentpad b { font-family: var(--font-display); font-weight: 800; font-size: 2rem; color: var(--accent); line-height: 1; }
+.parentpad-who { font-weight: 700; }
+.parentpad small { color: var(--muted, inherit); opacity: .8; }
+.parentpad.due { background: var(--accent); }
+.parentpad.due b, .parentpad.due span, .parentpad.due small { color: var(--surface); }
+.parentpad.down { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) { .parentpad { transition: none; } .parentpad.down { transform: none; } }
+.mytune { margin-top: 16px; padding: 16px; border-radius: 16px; border: 2px dashed var(--turn); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.mytune p { flex-basis: 100%; margin: 0; font-weight: 700; }

@@ -70,7 +70,7 @@ class Song:
                 "name": sec["name"], "bars": sec["bars"], "kind": sec.get("kind", "listen"),
                 "lines": sec.get("lines") or [], "start": start, "end": bar * self.per_bar * self.beat,
             }
-            o["tune"] = sec["bars"] * self.per_bar >= self.tune_beats
+            o["tune"] = o["kind"] != "free" and sec["bars"] * self.per_bar >= self.tune_beats
             self.sections.append(o)
             if o["tune"]:
                 for n in tune["notes"]:
@@ -189,6 +189,8 @@ class Painter:
         say, colour = "Listen", ACCENT
         if cur and cur["kind"] == "turn":
             say, colour = "Your turn!", TURN
+        elif cur and cur["kind"] == "free":
+            say, colour = "Make it up!", TURN
         elif cur and "together" in cur["name"].lower():
             say = "Play together"
         elif cur is s.sections[0] and not cur["tune"]:
@@ -209,7 +211,7 @@ class Painter:
         for sec in s.sections:
             wsec = (x1 - x0) * sec["bars"] / bars
             active = sec is cur
-            turn = sec["kind"] == "turn"
+            turn = sec["kind"] in ("turn", "free")
             fill = (TURN if turn else ACCENT) if active else BAND
             d.rounded_rectangle((x + 3, ty, x + wsec - 3, ty + 64), radius=14, fill=fill,
                                 outline=TURN if turn and not active else None, width=4)
@@ -220,12 +222,14 @@ class Painter:
         d.rectangle((head - 3, ty - 8, head + 3, ty + 72), fill=INK)
 
         # Words, one line per bar.
-        if cur and cur["kind"] != "turn" and cur["lines"]:
+        if cur and cur["kind"] not in ("turn", "free") and cur["lines"]:
             bar_in = int((t - cur["start"]) / (s.beat * s.per_bar))
             line = cur["lines"][min(bar_in, len(cur["lines"]) - 1)]
             d.text((W / 2, 420), line, font=self.f_lyric, fill=INK, anchor="mm")
         elif cur and cur["kind"] == "turn":
             d.text((W / 2, 420), "Play the key that lights up", font=self.f_lyric, fill=TURN, anchor="mm")
+        elif cur and cur["kind"] == "free":
+            d.text((W / 2, 420), "Play any notes you like. No wrong notes!", font=self.f_lyric, fill=TURN, anchor="mm")
 
         # The tune strip.
         cy, ch = 520, 84

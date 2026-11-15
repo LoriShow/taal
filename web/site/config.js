@@ -24,7 +24,13 @@ window.TAAL = {
       alt: "Album cover: a little drum with diyas, kites and rangoli for a festival" },
     { id: "album7", eyebrow: "Album seven", title: "चलो बजाएँ · Chalo Bajaayein", tab: "Album seven · Hindi",
       blurb: "Nine simple Hindi songs: an elephant, the rain, the moon, the kitchen, a bicycle and Dadi's stories.", cover: "covers/album7-v1",
-      alt: "Album cover: a little drum with an elephant, a bicycle and the moon on a rainy evening" }
+      alt: "Album cover: a little drum with an elephant, a bicycle and the moon on a rainy evening" },
+    { id: "album8", eyebrow: "Album eight", title: "Two Hands, One Family", tab: "Album eight · with a grown-up",
+      blurb: "Nine songs for two players: the child plays the tune while a grown-up plays one low note on the beat.", cover: "covers/album8-v1",
+      alt: "Album cover: a big drum and a little drum playing music together" },
+    { id: "album9", eyebrow: "Album nine", title: "My Own Song", tab: "Album nine · make it up",
+      blurb: "Nine songs that end with a make-it-up turn: no wrong notes, and you can hear your own tune back.", cover: "covers/album9-v1",
+      alt: "Album cover: a little drum painting colourful music notes across the sky" }
   ],
   // The stage: an animated backdrop, and characters the page moves on the beat.
   theme: {
