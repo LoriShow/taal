@@ -28,10 +28,16 @@ Job types so far:
 | Type | Does |
 |---|---|
 | `ping` | Proves the queue works end to end |
+| `read_instrument` | Reads a family's instrument photo with Claude: what it is, its layout, and whether its notes are known |
 | `check_song` | Runs the tune and plan rules on a draft song; marks it `checked` |
 | `backing_track` | Generates the backing track with ElevenLabs Music and stores it |
 
-Queue a job by inserting a row in `taal_jobs` (`type`, `song_id`).
+Queue a job by inserting a row in `taal_jobs` (`type`, `song_id`). `read_instrument` takes
+`payload.instrument_id` instead.
+
+A photo cannot show tuning. Keyboards are `ready` from the photo; other pitched
+instruments stay `needs_tuning` until their notes are measured (not built yet). A photo
+with a person in it is marked `retake`.
 
 Variables on `taal-worker`: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ELEVENLABS_API_KEY`,
 `ANTHROPIC_API_KEY`, `HIGGSFIELD_API_KEY`, `WOLFRAM_APP_ID`. No keys go in this repo.

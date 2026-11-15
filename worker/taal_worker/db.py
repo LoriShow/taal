@@ -52,3 +52,8 @@ class Db:
             )
         )
         return path
+
+    def download(self, path: str) -> tuple[bytes, str]:
+        """Read a file from the private 'taal' bucket. Returns (bytes, content type)."""
+        r = self._check(self.http.get(f"{self.url}/storage/v1/object/taal/{path}"))
+        return r.content, r.headers.get("content-type", "application/octet-stream")

@@ -1,3 +1,4 @@
+from taal_worker import instrument as instrument_mod
 from taal_worker import plan as plan_mod
 from taal_worker import tune as tune_mod
 
@@ -109,3 +110,81 @@ def test_elevenlabs_plan_shape():
     assert "96 BPM" in chunks[1]["positive_styles"]
     assert "vocals" not in chunks[1]["negative_styles"]
     assert any("space for a lead melody" in s for s in chunks[2]["positive_styles"])
+
+
+# A family's own instrument ---------------------------------------------------
+
+XYLO = ["C5", "D5", "E5", "F5", "G5", "A5", "B5", "C6"]
+
+
+def test_tune_on_own_instrument_ignores_voice_range():
+    tune = {**EASY, "notes": [note(p, i) for i, p in enumerate(["C5", "D5", "E5", "E5"] * 2)]}
+    assert not tune_mod.check_tune(tune, level=1)["ok"]  # too high to sing
+    result = tune_mod.check_tune(tune, level=1, instrument_notes=XYLO)
+    assert result["ok"], result["problems"]
+    assert result["for"] == "instrument"
+
+
+def test_note_missing_from_instrument_fails():
+    tune = {**EASY, "notes": [note(p, i) for i, p in enumerate(["C5", "D5", "F#5", "D5"] * 2)]}
+    result = tune_mod.check_tune(tune, level=2, instrument_notes=XYLO)
+    assert any("not on this instrument" in p for p in result["problems"])
+
+
+def test_level_limits_how_many_notes_on_instrument():
+    tune = {**EASY, "notes": [note(p, i) for i, p in enumerate(["C5", "D5", "E5", "F5"] * 2)]}
+    result = tune_mod.check_tune(tune, level=1, instrument_notes=XYLO)
+    assert any("4 different notes" in p for p in result["problems"])
+
+
+def part(label=None, colour=None, guess=None):
+    return {"label": label, "colour": colour, "note_guess": guess}
+
+
+def test_keyboard_photo_is_ready_with_notes():
+    raw = {"kind": "keyboard", "name": "mini keyboard", "pitched": True, "layout": "keys",
+           "parts": [part(guess=g) for g in ["C4", "D4", "E4", "F4", "G4"]],
+           "people_visible": False, "confidence": 0.9}
+    out = instrument_mod.clean_profile(raw)
+    assert out["status"] == "ready"
+    assert out["notes"] == ["C4", "D4", "E4", "F4", "G4"]
+    assert out["profile"]["count"] == 5
+
+
+def test_xylophone_photo_needs_tuning_even_with_guesses():
+    raw = {"kind": "xylophone", "name": "rainbow xylophone", "pitched": True, "layout": "row",
+           "parts": [part(colour=c, guess=g) for c, g in [("red", "C5"), ("orange", "D5"), ("yellow", None)]],
+           "people_visible": False, "confidence": 0.8}
+    out = instrument_mod.clean_profile(raw)
+    assert out["status"] == "needs_tuning"
+    assert out["notes"] == []
+    assert [p["colour"] for p in out["profile"]["parts"]] == ["red", "orange", "yellow"]
+
+
+def test_photo_with_a_person_must_be_retaken():
+    raw = {"kind": "ukulele", "name": "ukulele", "pitched": True, "layout": "strings",
+           "parts": [part() for _ in range(4)], "people_visible": True, "confidence": 0.9}
+    assert instrument_mod.clean_profile(raw)["status"] == "retake"
+
+
+def test_no_instrument_must_be_retaken():
+    raw = {"kind": "none", "name": "", "pitched": False, "layout": "single", "parts": [],
+           "people_visible": False, "confidence": 0.9}
+    assert instrument_mod.clean_profile(raw)["status"] == "retake"
+
+
+def test_rhythm_instrument_is_ready_without_notes():
+    raw = {"kind": "household", "name": "two steel pots and a spoon", "pitched": False,
+           "layout": "pads", "parts": [part(colour="silver"), part(colour="silver")],
+           "people_visible": False, "confidence": 0.7}
+    out = instrument_mod.clean_profile(raw)
+    assert out["status"] == "ready" and out["notes"] == []
+
+
+def test_bad_model_output_is_tidied():
+    raw = {"kind": "spaceship", "name": None, "pitched": 1, "layout": "spiral",
+           "parts": [part(guess="H9"), part(guess="c4")], "people_visible": False, "confidence": 7}
+    out = instrument_mod.clean_profile(raw)
+    assert out["profile"]["kind"] == "other" and out["profile"]["layout"] == "row"
+    assert out["profile"]["confidence"] == 1.0
+    assert [p["note_guess"] for p in out["profile"]["parts"]] == [None, "C4"]

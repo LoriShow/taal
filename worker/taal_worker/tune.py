@@ -28,6 +28,9 @@ LEVELS = {
     4: {"pitches": ["C4", "D4", "E4", "F4", "G4", "A4"], "max_leap": 9},
 }
 
+# With a family's own instrument, a level limits how many different notes are used.
+LEVEL_NOTE_COUNT = {1: 3, 2: 5, 3: 5, 4: 6}
+
 RANGE_LOW = "C4"
 RANGE_HIGH = "A4"
 
@@ -98,8 +101,13 @@ def playability(tune: dict) -> float:
     return round(100 * (0.35 * few_notes + 0.35 * small_steps + 0.30 * repeated), 1)
 
 
-def check_tune(tune: dict, level: int = 1) -> dict:
-    """Return {"ok": bool, "problems": [...], "playability": float, ...}."""
+def check_tune(tune: dict, level: int = 1, instrument_notes: list[str] | None = None) -> dict:
+    """Return {"ok": bool, "problems": [...], "playability": float, ...}.
+
+    Without instrument_notes the tune is for the voice: it must stay in C4-A4 and use
+    the level's notes. With instrument_notes (the notes the family's instrument really
+    has) the tune must use only those, and the level limits how many different ones.
+    """
     problems: list[str] = []
     rules = LEVELS.get(level)
     if rules is None:
@@ -110,16 +118,27 @@ def check_tune(tune: dict, level: int = 1) -> dict:
         return {"ok": False, "problems": ["the tune has no notes"]}
 
     low, high = midi(RANGE_LOW), midi(RANGE_HIGH)
-    allowed = {midi(p) for p in rules["pitches"]}
+    on_instrument = bool(instrument_notes)
+    allowed = {midi(p) for p in (instrument_notes if on_instrument else rules["pitches"])}
 
     for n in notes:
         m = midi(n["pitch"])
-        if not low <= m <= high:
+        if on_instrument:
+            if m not in allowed:
+                problems.append(f"{n['pitch']} at beat {n['start']} is not on this instrument")
+        elif not low <= m <= high:
             problems.append(f"{n['pitch']} at beat {n['start']} is outside {RANGE_LOW}-{RANGE_HIGH}")
         elif m not in allowed:
             problems.append(f"{n['pitch']} at beat {n['start']} is not a level {level} note")
         if n["length"] <= 0:
             problems.append(f"note at beat {n['start']} has no length")
+
+    if on_instrument:
+        used = len({midi(n["pitch"]) for n in notes})
+        if used > LEVEL_NOTE_COUNT[level]:
+            problems.append(
+                f"the tune uses {used} different notes (level {level} allows {LEVEL_NOTE_COUNT[level]})"
+            )
 
     for a, b in zip(notes, notes[1:]):
         leap = abs(midi(b["pitch"]) - midi(a["pitch"]))
@@ -144,6 +163,7 @@ def check_tune(tune: dict, level: int = 1) -> dict:
         "problems": problems,
         "playability": score,
         "level": level,
+        "for": "instrument" if on_instrument else "voice",
         "beat_ms": round(beat_ms(bpm), 2) if bpm else None,
         "range_hz": [round(frequency(RANGE_LOW), 2), round(frequency(RANGE_HIGH), 2)],
     }

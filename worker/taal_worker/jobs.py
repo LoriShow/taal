@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from . import instrument as instrument_mod
 from . import music
 from . import plan as plan_mod
 from . import tune as tune_mod
@@ -21,7 +22,13 @@ def check_song(db, job: dict) -> dict:
     song = _song(db, job)
     if not song.get("tune") or not song.get("plan"):
         raise RuntimeError("the song needs both a tune and a plan before it can be checked")
-    tune_result = tune_mod.check_tune(song["tune"], song["level"])
+    notes = None
+    if song.get("instrument_id"):
+        inst = db.get("taal_instruments", song["instrument_id"])
+        if inst is None or inst["status"] != "ready":
+            raise RuntimeError("the song's instrument is not ready yet")
+        notes = inst.get("notes") or None
+    tune_result = tune_mod.check_tune(song["tune"], song["level"], notes)
     plan_result = plan_mod.check_plan(song["plan"])
     if song["tune"].get("bpm") != song["plan"].get("bpm"):
         plan_result["ok"] = False
@@ -62,6 +69,41 @@ def backing_track(db, job: dict) -> dict:
     return {"audio_path": path, "elevenlabs_song_id": eleven_id, "bytes": len(audio)}
 
 
+PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+
+def read_instrument(db, job: dict) -> dict:
+    """Look at a family's instrument photo and save what it is and how it is laid out."""
+    instrument_id = (job.get("payload") or {}).get("instrument_id")
+    if not instrument_id:
+        raise RuntimeError("this job needs payload.instrument_id")
+    inst = db.get("taal_instruments", instrument_id)
+    if inst is None:
+        raise RuntimeError(f"instrument {instrument_id} not found")
+    if not inst["photo_path"].startswith(f"{inst['family_id']}/"):
+        raise RuntimeError("the photo is not in this family's folder")
+    image, media_type = db.download(inst["photo_path"])
+    media_type = media_type.split(";")[0].strip()
+    if media_type not in PHOTO_TYPES:
+        raise RuntimeError(f"unsupported photo type {media_type}; use JPEG, PNG or WebP")
+    if len(image) > MAX_PHOTO_BYTES:
+        raise RuntimeError("the photo is larger than 5 MB; send a smaller one")
+    result = instrument_mod.clean_profile(instrument_mod.read_photo(image, media_type))
+    db.update(
+        "taal_instruments",
+        instrument_id,
+        {
+            "kind": result["profile"]["kind"],
+            "profile": result["profile"],
+            "notes": result["notes"],
+            "status": result["status"],
+            "status_reason": result["reason"],
+        },
+    )
+    return result
+
+
 def ping(db, job: dict) -> dict:
     """Proves the queue works end to end."""
     return {"pong": True, "echo": job.get("payload") or {}}
@@ -69,6 +111,7 @@ def ping(db, job: dict) -> dict:
 
 HANDLERS = {
     "ping": ping,
+    "read_instrument": read_instrument,
     "check_song": check_song,
     "backing_track": backing_track,
 }
